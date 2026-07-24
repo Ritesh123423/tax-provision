@@ -1,361 +1,209 @@
 'use strict';
 
 /**
- * STATE.JS - Application State Management and Table Rendering
- * K G Somani & Co LLP
+ * STATE.JS — The open engagement.
  *
- * This module manages:
- *   - Application data state (current tax rows, deferred tax rows)
- *   - Default row templates for common Ind AS 12 scenarios
- *   - Table rendering for all editable grids
- *   - Data mutations with automatic re-computation
+ * Holds exactly one engagement in memory, resolves `data-bind` paths against
+ * it, recomputes on change, and writes back to storage on a debounce so a
+ * fast typist does not trigger a write per keystroke.
  */
 
 const State = (() => {
 
-  /**
-   * Generates a unique identifier for each row.
-   * @returns {string} Unique ID prefixed with underscore
-   */
-  const uid = () => '_' + Math.random().toString(36).substr(2, 9);
+  let current = null;   // the open engagement record
+  let result = null;    // last Compute.run output
+  let dirty = false;
+  const subs = new Set();
 
-  /** Central application data store */
-  const data = { ctRows: [], dtAsset: [], dtLiab: [], dtOther: [] };
+  const get = () => current;
+  const getResult = () => result;
+  const isOpen = () => !!current;
 
-  /* ------------------------------------------------------------------
-     DEFAULT ROW TEMPLATES
-     Pre-populated with common items encountered in Indian tax provisions
-     ------------------------------------------------------------------ */
+  const onChange = fn => { subs.add(fn); return () => subs.delete(fn); };
+  const notify = (reason) => subs.forEach(fn => { try { fn(result, current, reason); } catch (err) { console.error(err); } });
 
-  function initDefaults() {
-    /* --- Current Tax: Book profit to taxable income reconciliation --- */
-    data.ctRows = [
-      { id: uid(), label: 'Net Profit as per Statement of Profit & Loss (before tax)', amt: '', type: 'book', locked: true },
-      { id: uid(), label: 'Add: Depreciation as per Companies Act 2013 / Ind AS 16 (added back)', amt: '', type: 'add' },
-      { id: uid(), label: 'Less: Depreciation allowable u/s 32 of Income Tax Act, 1961', amt: '', type: 'less' },
-      { id: uid(), label: 'Add: Provision for Gratuity disallowed u/s 40A(7)', amt: '', type: 'add' },
-      { id: uid(), label: 'Add: Provision for Leave Encashment disallowed u/s 43B', amt: '', type: 'add' },
-      { id: uid(), label: 'Add: Provision for Bonus / Ex-gratia disallowed u/s 43B', amt: '', type: 'add' },
-      { id: uid(), label: 'Add: Provision for Doubtful Debts / ECL disallowed', amt: '', type: 'add' },
-      { id: uid(), label: 'Add: Expenses disallowed u/s 40(a)(ia) - TDS default', amt: '', type: 'add' },
-      { id: uid(), label: 'Add: Penalty, fines and personal expenses disallowed', amt: '', type: 'add' },
-      { id: uid(), label: 'Less: 43B items actually paid before due date of ITR filing', amt: '', type: 'less' },
-      { id: uid(), label: 'Less: Exempt income u/s 10 (dividends, LTCG etc.)', amt: '', type: 'less' },
-      { id: uid(), label: 'Less: Deduction u/s 80JJAA / 80IC / 80G / other Chapter VI-A', amt: '', type: 'less' },
-      { id: uid(), label: 'Add / (Less): Other adjustments - specify', amt: '', type: 'add' },
-    ];
+  /* ---------------- Open / close ---------------- */
 
-    /* --- Deferred Tax: Assets (CA vs TB) --- */
-    data.dtAsset = [
-      { id: uid(), label: 'Property, Plant & Equipment - Net Block (Ind AS 16)', ca: '', tb: '', note: 'CA = WDV per Schedule II / Ind AS | Tax Base = WDV per IT Act Sec 32' },
-      { id: uid(), label: 'Capital Work-in-Progress', ca: '', tb: '', note: 'Tax Base = 0 (no depreciation until asset put to use u/s 32)' },
-      { id: uid(), label: 'Intangible Assets (Ind AS 38)', ca: '', tb: '', note: '' },
-      { id: uid(), label: 'Right-of-Use Assets (Ind AS 116)', ca: '', tb: '', note: 'Tax Base = 0 (off-balance-sheet for tax; lease payments deducted on payment basis)' },
-      { id: uid(), label: 'Financial Instruments at FVTPL (Ind AS 109)', ca: '', tb: '', note: 'Tax Base = cost; CA = fair value' },
-      { id: uid(), label: 'Financial Instruments at FVOCI', ca: '', tb: '', note: '' },
-      { id: uid(), label: 'Inventories (Ind AS 2)', ca: '', tb: '', note: '' },
-      { id: uid(), label: 'Other Non-Current Assets', ca: '', tb: '', note: '' },
-    ];
-
-    /* --- Deferred Tax: Liabilities & Provisions (CA vs TB) --- */
-    data.dtLiab = [
-      { id: uid(), label: 'Provision for Gratuity - Defined Benefit Obligation (Ind AS 19)', ca: '', tb: '', note: 'Tax Base = 0 (allowed only on actual payment u/s 43B / 40A(7))' },
-      { id: uid(), label: 'Provision for Leave Encashment', ca: '', tb: '', note: 'Tax Base = 0 (allowed on payment basis u/s 43B)' },
-      { id: uid(), label: 'Provision for Bonus / Ex-gratia', ca: '', tb: '', note: 'Tax Base = 0 if not paid before due date of ITR filing' },
-      { id: uid(), label: 'Provision for Expected Credit Loss / Doubtful Debts (Ind AS 109)', ca: '', tb: '', note: 'Tax Base = 0 (allowed only on actual write-off under IT Act)' },
-      { id: uid(), label: 'Lease Liability (Ind AS 116)', ca: '', tb: '', note: 'Tax Base = 0 (off-balance-sheet for tax)' },
-      { id: uid(), label: 'Contract Liabilities / Advance from Customers', ca: '', tb: '', note: '' },
-      { id: uid(), label: 'Warranty Provision', ca: '', tb: '', note: 'Tax Base = 0 (not deductible until actual claim settled)' },
-      { id: uid(), label: 'Other Provisions', ca: '', tb: '', note: '' },
-    ];
-
-    /* --- Deferred Tax: Other Items (Losses, MAT Credit) --- */
-    data.dtOther = [
-      { id: uid(), label: 'Unabsorbed Depreciation carried forward u/s 32(2)', amt: '', type: 'dta', note: 'Recognise only if virtually certain of future taxable profits' },
-      { id: uid(), label: 'Business Loss carried forward u/s 72 (8-year limit)', amt: '', type: 'dta', note: 'Recognise only if virtually certain' },
-      { id: uid(), label: 'MAT Credit Entitlement u/s 115JAA / 115JD', amt: '', type: 'dta', note: 'Carry-forward period: 15 years from year of MAT payment' },
-    ];
-
-    renderAll();
+  function open(id) {
+    const eng = Store.engagementById(id);
+    if (!eng) return null;
+    saveNow();
+    current = eng;
+    try { localStorage.setItem('kgs.lastEngagement', id); } catch {}
+    recompute('open');
+    Store.log('Opened engagement', eng.name || 'Untitled', eng.id);
+    return eng;
   }
 
-  /* ------------------------------------------------------------------
-     RENDER ALL TABLES
-     ------------------------------------------------------------------ */
-
-  function renderAll() {
-    renderCT();
-    renderDtAsset();
-    renderDtLiab();
-    renderDtOther();
+  function close() {
+    saveNow();
+    current = null;
+    result = null;
+    notify('close');
   }
 
-  /* ------------------------------------------------------------------
-     CURRENT TAX TABLE RENDERER
-     ------------------------------------------------------------------ */
-
-  function renderCT() {
-    const tbody = document.getElementById('ct-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    data.ctRows.forEach((row, i) => {
-      const tpill  = { book: 'pill-blue', add: 'pill-dta', less: 'pill-amber' }[row.type];
-      const tlabel = { book: 'Book', add: 'Add', less: 'Less' }[row.type];
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="rn" style="width:30px">${i + 1}</td>
-        <td style="width:80px">
-          ${row.locked
-            ? `<span class="pill ${tpill}">${tlabel}</span>`
-            : `<select class="ti" style="width:64px" onchange="State.updCT('${row.id}','type',this.value);State.go()">
-                <option value="add"  ${row.type === 'add'  ? 'selected' : ''}>Add</option>
-                <option value="less" ${row.type === 'less' ? 'selected' : ''}>Less</option>
-              </select>`}
-        </td>
-        <td>
-          <input class="ti" value="${row.label}"
-            onchange="State.updCT('${row.id}','label',this.value)"
-            style="width:100%"/>
-        </td>
-        <td style="width:170px">
-          <input class="ti r" type="number" value="${row.amt}"
-            placeholder="0"
-            oninput="State.updCT('${row.id}','amt',this.value);State.go()"
-            style="width:100%"/>
-        </td>
-        <td style="width:28px;text-align:center">
-          ${row.locked ? '' : `<button class="del-btn" onclick="State.delCT('${row.id}')">x</button>`}
-        </td>`;
-      tbody.appendChild(tr);
-    });
+  function create(user) {
+    saveNow();
+    const eng = Store.newEngagement(user?.id);
+    Store.addEngagement(eng);
+    current = eng;
+    try { localStorage.setItem('kgs.lastEngagement', eng.id); } catch {}
+    Store.log('Created engagement', eng.fy, eng.id);
+    recompute('create');
+    return eng;
   }
 
-  /* ------------------------------------------------------------------
-     DEFERRED TAX: ASSETS TABLE RENDERER
-     ------------------------------------------------------------------ */
-
-  function renderDtAsset() {
-    const tbody = document.getElementById('dt-asset-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const rate = (parseFloat(document.getElementById('ci-rate')?.value) || 25.168) / 100;
-
-    data.dtAsset.forEach((row, i) => {
-      const ca   = parseFloat(row.ca) || 0;
-      const tb   = parseFloat(row.tb) || 0;
-      const diff = ca - tb;
-      const te   = Math.abs(diff) * rate;
-      const nature = diff > 0 ? 'DTL' : diff < 0 ? 'DTA' : '-';
-      const pc     = diff > 0 ? 'pill-dtl' : diff < 0 ? 'pill-dta' : 'pill-none';
-      const col    = diff > 0 ? 'color:var(--red)' : diff < 0 ? 'color:var(--green)' : '';
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="rn" style="width:30px">${i + 1}</td>
-        <td>
-          <input class="ti" value="${row.label}"
-            onchange="State.updDT('asset','${row.id}','label',this.value)"
-            style="width:100%;font-weight:500"/>
-          ${row.note ? `<div style="font-size:10.5px;color:var(--ink-4);padding-left:4px;margin-top:2px">${row.note}</div>` : ''}
-        </td>
-        <td style="width:140px">
-          <input class="ti r" type="number" value="${row.ca}"
-            placeholder="0"
-            oninput="State.updDT('asset','${row.id}','ca',this.value);State.go()"
-            style="width:100%"/>
-        </td>
-        <td style="width:140px">
-          <input class="ti r" type="number" value="${row.tb}"
-            placeholder="0"
-            oninput="State.updDT('asset','${row.id}','tb',this.value);State.go()"
-            style="width:100%"/>
-        </td>
-        <td class="r" style="width:120px;font-weight:600;${col}">${diff !== 0 ? Compute.fmtBracket(diff) : '-'}</td>
-        <td class="c" style="width:68px"><span class="pill ${pc}">${nature}</span></td>
-        <td class="r" style="width:120px;font-weight:600">${diff !== 0 ? 'Rs ' + Compute.fmt(te) : '-'}</td>
-        <td style="width:28px;text-align:center">
-          <button class="del-btn" onclick="State.delDT('asset','${row.id}')">x</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
+  /** Reopen whatever was last worked on, or the most recent accessible one. */
+  function restore(user) {
+    let id = null;
+    try { id = localStorage.getItem('kgs.lastEngagement'); } catch {}
+    const visible = Auth.visibleEngagements(user);
+    if (id && visible.some(e => e.id === id)) return open(id);
+    if (visible.length) {
+      const latest = [...visible].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
+      return open(latest.id);
+    }
+    return null;
   }
 
-  /* ------------------------------------------------------------------
-     DEFERRED TAX: LIABILITIES TABLE RENDERER
-     ------------------------------------------------------------------ */
+  /* ---------------- Path binding ----------------
+     Paths look like `dt.assets.<rowId>.ca` or `ct.rows.<rowId>.amt`, and
+     scalar fields use a plain path such as `opening.dta`.
+     ---------------------------------------------- */
 
-  function renderDtLiab() {
-    const tbody = document.getElementById('dt-liab-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+  /** Locate the container holding a bound value, plus the final key. */
+  function resolve(path) {
+    if (!current) return null;
+    const parts = path.split('.');
+    const key = parts.pop();
 
-    const rate = (parseFloat(document.getElementById('ci-rate')?.value) || 25.168) / 100;
+    // Row collections are arrays keyed by id, not objects.
+    if (parts.length === 2 && parts[0] === 'ct' && parts[1] === 'rows') return null;
+    if (parts.length === 3) {
+      const [a, b, rowId] = parts;
+      const arr = a === 'ct' && b === 'rows' ? current.ct.rows
+        : a === 'dt' ? current.dt?.[b]
+        : null;
+      if (!Array.isArray(arr)) return null;
+      const row = arr.find(r => r.id === rowId);
+      return row ? { obj: row, key } : null;
+    }
 
-    data.dtLiab.forEach((row, i) => {
-      const ca   = parseFloat(row.ca) || 0;
-      const tb   = parseFloat(row.tb) || 0;
-      const diff = ca - tb;
-      const te   = Math.abs(diff) * rate;
-      const nature = diff > 0 ? 'DTA' : diff < 0 ? 'DTL' : '-';
-      const pc     = diff > 0 ? 'pill-dta' : diff < 0 ? 'pill-dtl' : 'pill-none';
-      const col    = diff > 0 ? 'color:var(--green)' : diff < 0 ? 'color:var(--red)' : '';
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="rn" style="width:30px">${i + 1}</td>
-        <td>
-          <input class="ti" value="${row.label}"
-            onchange="State.updDT('liab','${row.id}','label',this.value)"
-            style="width:100%;font-weight:500"/>
-          ${row.note ? `<div style="font-size:10.5px;color:var(--ink-4);padding-left:4px;margin-top:2px">${row.note}</div>` : ''}
-        </td>
-        <td style="width:140px">
-          <input class="ti r" type="number" value="${row.ca}"
-            placeholder="0"
-            oninput="State.updDT('liab','${row.id}','ca',this.value);State.go()"
-            style="width:100%"/>
-        </td>
-        <td style="width:140px">
-          <input class="ti r" type="number" value="${row.tb}"
-            placeholder="0"
-            oninput="State.updDT('liab','${row.id}','tb',this.value);State.go()"
-            style="width:100%"/>
-        </td>
-        <td class="r" style="width:120px;font-weight:600;${col}">${diff !== 0 ? Compute.fmtBracket(diff) : '-'}</td>
-        <td class="c" style="width:68px"><span class="pill ${pc}">${nature}</span></td>
-        <td class="r" style="width:120px;font-weight:600">${diff !== 0 ? 'Rs ' + Compute.fmt(te) : '-'}</td>
-        <td style="width:28px;text-align:center">
-          <button class="del-btn" onclick="State.delDT('liab','${row.id}')">x</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
+    let obj = current;
+    for (const p of parts) {
+      if (obj == null) return null;
+      obj = obj[p];
+    }
+    return obj ? { obj, key } : null;
   }
 
-  /* ------------------------------------------------------------------
-     DEFERRED TAX: OTHER ITEMS TABLE RENDERER
-     ------------------------------------------------------------------ */
+  const readPath = path => { const t = resolve(path); return t ? t.obj[t.key] : undefined; };
 
-  function renderDtOther() {
-    const tbody = document.getElementById('dt-other-body');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const rate = (parseFloat(document.getElementById('ci-rate')?.value) || 25.168) / 100;
-
-    data.dtOther.forEach((row, i) => {
-      const amt = parseFloat(row.amt) || 0;
-      const te  = amt * rate;
-      const tr  = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="rn" style="width:30px">${i + 1}</td>
-        <td>
-          <input class="ti" value="${row.label}"
-            onchange="State.updOther('${row.id}','label',this.value)"
-            style="width:100%;font-weight:500"/>
-          ${row.note ? `<div style="font-size:10.5px;color:var(--ink-4);padding-left:4px;margin-top:2px">${row.note}</div>` : ''}
-        </td>
-        <td style="width:160px">
-          <input class="ti r" type="number" value="${row.amt}"
-            placeholder="0"
-            oninput="State.updOther('${row.id}','amt',this.value);State.go()"
-            style="width:100%"/>
-        </td>
-        <td class="c" style="width:90px">
-          <select class="ti" style="width:70px"
-            onchange="State.updOther('${row.id}','type',this.value);State.go()">
-            <option value="dta" ${row.type === 'dta' ? 'selected' : ''}>DTA</option>
-            <option value="dtl" ${row.type === 'dtl' ? 'selected' : ''}>DTL</option>
-          </select>
-        </td>
-        <td class="r" style="width:130px;font-weight:600">${amt ? 'Rs ' + Compute.fmt(te) : '-'}</td>
-        <td style="width:28px;text-align:center">
-          <button class="del-btn" onclick="State.delOther('${row.id}')">x</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
+  function writePath(path, value) {
+    const t = resolve(path);
+    if (!t) return false;
+    t.obj[t.key] = value;
+    return true;
   }
 
-  /* ------------------------------------------------------------------
-     DATA MUTATIONS
-     ------------------------------------------------------------------ */
+  /* ---------------- Rows ---------------- */
 
-  function updCT(id, field, val) {
-    const r = data.ctRows.find(x => x.id === id);
-    if (r) r[field] = val;
+  const newId = () => U.uid('r');
+
+  function addCtRow() {
+    current.ct.rows.push({ id: newId(), label: 'New adjustment', amt: '', type: 'add', nature: 'perm' });
+    recompute('rows');
   }
 
-  function addCT() {
-    data.ctRows.push({ id: uid(), label: 'New line item', amt: '', type: 'add' });
-    renderCT();
+  function delCtRow(id) {
+    current.ct.rows = current.ct.rows.filter(r => r.id !== id || r.locked);
+    recompute('rows');
   }
 
-  function delCT(id) {
-    data.ctRows = data.ctRows.filter(x => x.id !== id);
-    renderCT();
-    go();
+  function addDtRow(group) {
+    const base = { id: newId(), label: 'New line', open: '', openUnrec: '', alloc: 'pl', recognised: true, note: '' };
+    if (group === 'others') current.dt.others.push({ ...base, amt: '', side: 'dta', isTaxAmount: false, expiry: '' });
+    else current.dt[group].push({ ...base, ca: '', tb: '' });
+    recompute('rows');
   }
 
-  function updDT(section, id, field, val) {
-    const arr = section === 'asset' ? data.dtAsset : data.dtLiab;
-    const r   = arr.find(x => x.id === id);
-    if (r) r[field] = val;
-    if (section === 'asset') renderDtAsset(); else renderDtLiab();
+  function delDtRow(group, id) {
+    current.dt[group] = current.dt[group].filter(r => r.id !== id);
+    recompute('rows');
   }
 
-  function addDT(section) {
-    const nr = { id: uid(), label: 'New item', ca: '', tb: '', note: '' };
-    if (section === 'asset') data.dtAsset.push(nr); else data.dtLiab.push(nr);
-    if (section === 'asset') renderDtAsset(); else renderDtLiab();
-    go();
+  /* ---------------- Checklist ---------------- */
+
+  /** Marking the same state twice clears it, so a mis-click is one click to undo. */
+  function markChecklist(itemId, state, user) {
+    current.checklist = current.checklist || {};
+    const existing = current.checklist[itemId];
+    if (existing?.state === state) delete current.checklist[itemId];
+    else current.checklist[itemId] = { state, by: user?.name || 'Unknown', at: new Date().toISOString() };
+    recompute('checklist');
   }
 
-  function delDT(section, id) {
-    if (section === 'asset') data.dtAsset = data.dtAsset.filter(x => x.id !== id);
-    else                     data.dtLiab  = data.dtLiab.filter(x => x.id !== id);
-    if (section === 'asset') renderDtAsset(); else renderDtLiab();
-    go();
+  function clearChecklist() {
+    current.checklist = {};
+    recompute('checklist');
   }
 
-  function updOther(id, field, val) {
-    const r = data.dtOther.find(x => x.id === id);
-    if (r) r[field] = val;
+  /* ---------------- Status ---------------- */
+
+  function setStatus(status, user) {
+    current.status = status;
+    if (status === 'signed') {
+      current.signedBy = user?.name || 'Unknown';
+      current.signedAt = new Date().toISOString();
+      if (!current.reviewedBy) current.reviewedBy = user?.name || '';
+    } else {
+      current.signedBy = null;
+      current.signedAt = null;
+    }
+    Store.log(
+      status === 'signed' ? 'Signed off engagement' : status === 'review' ? 'Sent engagement for review' : 'Returned engagement to draft',
+      current.name || 'Untitled', current.id
+    );
+    recompute('status');
   }
 
-  function addOther() {
-    data.dtOther.push({ id: uid(), label: 'New item', amt: '', type: 'dta', note: '' });
-    renderDtOther();
-    go();
+  /* ---------------- Compute & persist ---------------- */
+
+  function recompute(reason = 'edit') {
+    if (!current) { result = null; notify(reason); return null; }
+    result = Compute.run(current);
+    dirty = true;
+    scheduleSave();
+    notify(reason);
+    return result;
   }
 
-  function delOther(id) {
-    data.dtOther = data.dtOther.filter(x => x.id !== id);
-    renderDtOther();
-    go();
+  const scheduleSave = U.debounce(() => saveNow(), 700);
+
+  function saveNow() {
+    if (!current || !dirty) return;
+    Store.saveEngagement(current);
+    dirty = false;
   }
 
-  /* ------------------------------------------------------------------
-     DEBOUNCED RECOMPUTATION
-     Triggers Compute.run 90ms after last input to avoid excessive recalculation
-     ------------------------------------------------------------------ */
-
-  let _timer = null;
-  function go() {
-    clearTimeout(_timer);
-    _timer = setTimeout(() => Compute.run(data), 90);
+  /** Recompute without touching storage — used when only display options change. */
+  function refresh() {
+    if (!current) return null;
+    result = Compute.run(current);
+    notify('refresh');
+    return result;
   }
 
-  /* ------------------------------------------------------------------
-     PUBLIC API
-     ------------------------------------------------------------------ */
+  // A tab closing mid-edit must not lose the last few keystrokes.
+  window.addEventListener('beforeunload', () => { scheduleSave.cancel?.(); saveNow(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+
   return {
-    data, initDefaults, renderAll,
-    renderCT, renderDtAsset, renderDtLiab, renderDtOther,
-    updCT, addCT, delCT,
-    updDT, addDT, delDT,
-    updOther, addOther, delOther,
-    go
+    get, getResult, isOpen, onChange,
+    open, close, create, restore,
+    readPath, writePath,
+    addCtRow, delCtRow, addDtRow, delDtRow,
+    markChecklist, clearChecklist, setStatus,
+    recompute, refresh, saveNow
   };
 })();

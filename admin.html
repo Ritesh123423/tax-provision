@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin console — Ind AS 12 Workpaper</title>
+<meta name="color-scheme" content="light">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="mask-icon" href="favicon.svg" color="#131a22">
+<meta name="theme-color" content="#131a22">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin">
+
+<a href="#a-body" class="skip">Skip to console</a>
+
+<header class="a-top">
+  <div class="a-top-l">
+    <div class="mark" id="a-mark">KGS</div>
+    <div class="a-title">Admin console<span id="a-firm">K G Somani &amp; Co LLP</span></div>
+  </div>
+  <div class="hdr-r">
+    <a class="btn btn-dark" href="app.html">← Back to workpapers</a>
+    <div class="acct">
+      <button class="acct-btn" id="btn-acct" aria-haspopup="menu" aria-expanded="false">
+        <span class="avatar" id="acct-initials">—</span>
+        <span id="acct-name">—</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav class="a-tabs" role="tablist" aria-label="Admin sections">
+  <button class="a-tab" role="tab" data-pane="overview"  aria-selected="true">Overview</button>
+  <button class="a-tab" role="tab" data-pane="users"     aria-selected="false">People <span class="a-tab-count" id="c-users">0</span></button>
+  <button class="a-tab" role="tab" data-pane="engagements" aria-selected="false">Engagements <span class="a-tab-count" id="c-engs">0</span></button>
+  <button class="a-tab" role="tab" data-pane="rates"     aria-selected="false">Rate master</button>
+  <button class="a-tab" role="tab" data-pane="checklist" aria-selected="false">Checklist</button>
+  <button class="a-tab" role="tab" data-pane="log"       aria-selected="false">Activity</button>
+  <button class="a-tab" role="tab" data-pane="settings"  aria-selected="false">Settings</button>
+</nav>
+
+<main class="a-body" id="a-body" tabindex="-1">
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="a-pane on" id="pane-overview" role="tabpanel">
+    <div class="a-head">
+      <div>
+        <h1 class="h-page">Overview</h1>
+        <p class="lede">Everything stored in this browser profile.</p>
+      </div>
+    </div>
+    <div class="a-stats" id="stat-strip"></div>
+    <div id="overview-notice"></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Recent activity</div></div>
+        <div class="card-body-flush" id="overview-log"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Engagements needing attention</div></div>
+        <div class="card-body-flush" id="overview-attention"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PEOPLE ============ -->
+  <section class="a-pane" id="pane-users" role="tabpanel">
+    <div class="a-head">
+      <div>
+        <h1 class="h-page">People</h1>
+        <p class="lede">Roles decide what each person can reach. There must always be at least one active administrator.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-add-user">Add person</button>
+    </div>
+    <div class="a-filters">
+      <input class="inp" id="u-search" placeholder="Search name or email">
+      <select class="inp" id="u-role" style="max-width:190px">
+        <option value="all">All roles</option>
+        <option value="admin">Administrator</option>
+        <option value="manager">Manager</option>
+        <option value="preparer">Preparer</option>
+        <option value="viewer">Read only</option>
+      </select>
+      <select class="inp" id="u-status" style="max-width:170px">
+        <option value="all">All statuses</option>
+        <option value="active">Active</option>
+        <option value="suspended">Suspended</option>
+      </select>
+    </div>
+    <div class="card"><div class="card-body-flush"><div class="tbl-scroll">
+      <table class="wt">
+        <thead><tr>
+          <th>Person</th><th style="width:170px">Role</th><th style="width:120px">Status</th>
+          <th style="width:140px">Last signed in</th><th style="width:230px" class="r">Actions</th>
+        </tr></thead>
+        <tbody id="u-body"></tbody>
+      </table>
+    </div></div></div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">What each role can do</div></div>
+      <div class="card-body-flush"><div class="tbl-scroll"><table class="wt" id="role-matrix"></table></div></div>
+    </div>
+  </section>
+
+  <!-- ============ ENGAGEMENTS ============ -->
+  <section class="a-pane" id="pane-engagements" role="tabpanel">
+    <div class="a-head">
+      <div>
+        <h1 class="h-page">Engagements</h1>
+        <p class="lede">Every workpaper in this browser, including ones you did not create.</p>
+      </div>
+    </div>
+    <div class="a-filters">
+      <input class="inp" id="e-search" placeholder="Search client, CIN or year">
+      <select class="inp" id="e-status" style="max-width:180px">
+        <option value="all">All statuses</option>
+        <option value="draft">Draft</option>
+        <option value="review">Under review</option>
+        <option value="signed">Signed off</option>
+      </select>
+    </div>
+    <div class="card"><div class="card-body-flush"><div class="tbl-scroll">
+      <table class="wt">
+        <thead><tr>
+          <th>Client</th><th style="width:88px">Year</th><th style="width:104px">Status</th>
+          <th style="width:150px">Owner</th><th class="r" style="width:130px">Tax expense</th>
+          <th class="c" style="width:90px">Tallies</th><th class="r" style="width:250px">Actions</th>
+        </tr></thead>
+        <tbody id="e-body"></tbody>
+      </table>
+    </div></div></div>
+  </section>
+
+  <!-- ============ RATE MASTER ============ -->
+  <section class="a-pane" id="pane-rates" role="tabpanel">
+    <div class="a-head">
+      <div>
+        <h1 class="h-page">Rate master</h1>
+        <p class="lede">The regimes offered when someone sets up an engagement. Editing a rate here does not change engagements already using it.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-add-rate">Add regime</button>
+    </div>
+    <div class="notice notice-info">
+      <span class="notice-tag">Check</span>
+      <span>Rates change with each Finance Act. Confirm these against the current law before the busy season, and record the effective rate as enacted or substantively enacted at the reporting date — Ind AS 12.47.</span>
+    </div>
+    <div class="card"><div class="card-body-flush"><div class="tbl-scroll">
+      <table class="wt">
+        <thead><tr>
+          <th style="width:96px">Code</th><th>Label</th>
+          <th class="r" style="width:82px">Base</th><th class="r" style="width:96px">Surcharge</th><th class="r" style="width:74px">Cess</th>
+          <th class="r" style="width:104px">Effective</th><th class="r" style="width:100px">MAT</th>
+          <th class="c" style="width:88px">Status</th><th class="r" style="width:180px">Actions</th>
+        </tr></thead>
+        <tbody id="r-body"></tbody>
+      </table>
+    </div></div></div>
+  </section>
+
+  <!-- ============ CHECKLIST ============ -->
+  <section class="a-pane" id="pane-checklist" role="tabpanel">
+    <div class="a-head">
+      <div>
+        <h1 class="h-page">Checklist template</h1>
+        <p class="lede">Points that appear on every new workpaper. Marks already recorded on existing engagements are kept.</p>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-line" id="btn-reset-chk">Restore defaults</button>
+        <button class="btn btn-primary" id="btn-add-chk">Add point</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-body-flush"><div class="tbl-scroll">
+      <table class="wt">
+        <thead><tr>
+          <th style="width:150px">Group</th><th>Point</th><th style="width:160px">Reference</th>
+          <th class="r" style="width:200px">Actions</th>
+        </tr></thead>
+        <tbody id="chk-body"></tbody>
+      </table>
+    </div></div></div>
+  </section>
+
+  <!-- ============ ACTIVITY ============ -->
+  <section class="a-pane" id="pane-log" role="tabpanel">
+    <div class="a-head">
+      <div>
+        <h1 class="h-page">Activity</h1>
+        <p class="lede">Sign-ins, edits and exports, newest first. Capped at 2,000 entries.</p>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn btn-line" id="btn-log-export">Download log</button>
+        <button class="btn btn-danger-line" id="btn-log-clear">Clear log</button>
+      </div>
+    </div>
+    <div class="a-filters">
+      <input class="inp" id="l-search" placeholder="Search action, person or engagement">
+    </div>
+    <div class="card"><div class="card-body-flush" id="log-body"></div></div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="a-pane" id="pane-settings" role="tabpanel">
+    <div class="a-head">
+      <div>
+        <h1 class="h-page">Settings</h1>
+        <p class="lede">Firm identity, access policy, and the data held in this browser.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Firm</div></div>
+      <div class="card-body">
+        <div class="fg c3">
+          <div class="field">
+            <label class="lbl" for="s-name">Firm name</label>
+            <input class="inp" id="s-name" style="text-align:left">
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-tag">Tagline</label>
+            <input class="inp" id="s-tag" style="text-align:left">
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-short">Monogram</label>
+            <input class="inp" id="s-short" maxlength="4" style="text-align:left">
+            <p class="hint">Up to four characters, shown in the header mark.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Access</div></div>
+      <div class="card-body">
+        <div class="fg c3">
+          <div class="field">
+            <label class="lbl" for="s-session">Session length (minutes)</label>
+            <input class="inp mono" id="s-session" type="number" min="5" max="1440" step="5">
+            <p class="hint">Extended automatically while someone is working.</p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-minlen">Minimum password length</label>
+            <input class="inp mono" id="s-minlen" type="number" min="8" max="64">
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-maxfail">Attempts before lockout</label>
+            <input class="inp mono" id="s-maxfail" type="number" min="3" max="20">
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-lockout">Lockout length (minutes)</label>
+            <input class="inp mono" id="s-lockout" type="number" min="1" max="1440">
+          </div>
+        </div>
+        <hr class="divider">
+        <label class="sw">
+          <input type="checkbox" id="s-selfreg">
+          <span class="sw-track"></span>
+          <span>Anyone with the link can create their own account</span>
+        </label>
+        <p class="hint mt-8">Switch this off once the team is set up, so new accounts are only created here.</p>
+      </div>
+      <div class="card-foot">
+        <span class="hint" id="s-saved"></span>
+        <button class="btn btn-primary" id="btn-save-settings">Save settings</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Where this data lives</div></div>
+      <div class="card-body" id="storage-body"></div>
+    </div>
+
+    <div class="card danger-zone">
+      <div class="card-hdr"><div class="card-title">Data</div></div>
+      <div class="card-body">
+        <div class="dz-row">
+          <div>
+            <strong>Download a full backup</strong>
+            <p>Every account, engagement, rate and log entry as one JSON file. Password hashes are included, so restoring keeps sign-ins working.</p>
+          </div>
+          <button class="btn btn-line" id="btn-backup">Download backup</button>
+        </div>
+        <div class="dz-row">
+          <div>
+            <strong>Restore from a backup</strong>
+            <p>Replaces everything currently in this browser. Download a backup first.</p>
+          </div>
+          <button class="btn btn-line" id="btn-restore">Restore</button>
+        </div>
+        <div class="dz-row">
+          <div>
+            <strong>Erase everything</strong>
+            <p>Removes all accounts, engagements and history from this browser. This cannot be undone.</p>
+          </div>
+          <button class="btn btn-danger" id="btn-wipe">Erase everything</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
+
+<script src="js/core/util.js"></script>
+<script src="js/core/store.js"></script>
+<script src="js/core/hash.js"></script>
+<script src="js/core/auth.js"></script>
+<script src="js/compute.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

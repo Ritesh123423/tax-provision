@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="13" fill="#131a22"/>
+  <!-- The identity the tool rests on: carrying amount over tax base, ruled off -->
+  <rect x="14" y="17" width="36" height="3.4" rx="1.7" fill="#2e4e9e"/>
+  <rect x="14" y="26" width="24" height="3.4" rx="1.7" fill="#5a6673"/>
+  <rect x="14" y="34.5" width="36" height="1.6" fill="#7d8896"/>
+  <!-- the tick -->
+  <path d="M16 45.5l6.5 7L48 42" fill="none" stroke="#34c97b" stroke-width="4.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

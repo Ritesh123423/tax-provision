@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ind AS 12 Tax Provision Workpaper</title>
+<meta name="color-scheme" content="light">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="mask-icon" href="favicon.svg" color="#131a22">
+<meta name="theme-color" content="#131a22">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/print.css" media="print">
+</head>
+<body class="app">
+
+<a href="#main" class="skip">Skip to workpaper</a>
+
+<!-- ==================== HEADER ==================== -->
+<header class="hdr">
+  <div class="hdr-l">
+    <button class="btn btn-dark btn-icon side-toggle" id="btn-side" aria-label="Show navigation" aria-expanded="false">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M2 4h11M2 7.5h11M2 11h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+    <div class="mark" id="hdr-mark">KGS</div>
+    <div class="hdr-firm-block">
+      <div class="hdr-firm" id="hdr-firm">K G Somani &amp; Co LLP</div>
+      <div class="hdr-tag" id="hdr-tag">Chartered Accountants</div>
+    </div>
+    <div class="hdr-div"></div>
+    <div class="hdr-eng">
+      <div class="hdr-eng-name" id="hdr-eng-name">No engagement open</div>
+      <div class="hdr-eng-meta" id="hdr-eng-meta">—</div>
+    </div>
+    <span class="hdr-status draft" id="hdr-status">Draft</span>
+  </div>
+
+  <div class="hdr-r">
+    <button class="btn btn-dark" id="btn-export" aria-haspopup="true">Export</button>
+    <button class="btn btn-dark rail-toggle" id="btn-rail" aria-expanded="false">
+      Tallies <span id="rail-count" class="mono" style="opacity:.6"></span>
+    </button>
+    <a class="btn btn-dark hide" id="btn-admin" href="admin.html">Admin</a>
+    <div class="acct">
+      <button class="acct-btn" id="btn-acct" aria-haspopup="menu" aria-expanded="false">
+        <span class="avatar" id="acct-initials">—</span>
+        <span id="acct-role">—</span>
+        <svg width="9" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <nav class="side" id="side" aria-label="Workpaper sections">
+    <div class="eng-pick">
+      <label class="sr-only" for="eng-select">Open engagement</label>
+      <select class="inp" id="eng-select"></select>
+    </div>
+
+    <div class="side-scroll">
+      <div class="side-lbl">Engagements</div>
+      <button class="nav-item" data-step="portfolio">
+        <span class="nav-n">◧</span><span class="nav-txt">All engagements</span><span></span>
+      </button>
+
+      <div class="side-lbl">Inputs</div>
+      <button class="nav-item" data-step="client">
+        <span class="nav-n">1</span><span class="nav-txt">Client &amp; engagement</span><span data-flag="client"></span>
+      </button>
+      <button class="nav-item" data-step="current">
+        <span class="nav-n">2</span><span class="nav-txt">Current tax</span><span data-flag="current"></span>
+      </button>
+      <button class="nav-item" data-step="deferred">
+        <span class="nav-n">3</span><span class="nav-txt">Deferred tax schedule</span><span data-flag="deferred"></span>
+      </button>
+
+      <div class="side-lbl">Reconciliations</div>
+      <button class="nav-item" data-step="movement">
+        <span class="nav-n">4</span><span class="nav-txt">Movement schedule</span><span data-flag="movement"></span>
+      </button>
+      <button class="nav-item" data-step="summary">
+        <span class="nav-n">5</span><span class="nav-txt">Summary &amp; journals</span><span data-flag="summary"></span>
+      </button>
+      <button class="nav-item" data-step="etr">
+        <span class="nav-n">6</span><span class="nav-txt">Effective rate</span><span data-flag="etr"></span>
+      </button>
+
+      <div class="side-lbl">Output</div>
+      <button class="nav-item" data-step="disclosure">
+        <span class="nav-n">7</span><span class="nav-txt">Disclosure note</span><span></span>
+      </button>
+      <button class="nav-item" data-step="checklist">
+        <span class="nav-n">8</span><span class="nav-txt">Checklist &amp; sign-off</span><span data-flag="checklist"></span>
+      </button>
+    </div>
+
+    <div class="side-foot">
+      <div class="prog-top">
+        <span class="eyebrow">Completeness</span>
+        <span class="prog-pct" id="prog-pct">0%</span>
+      </div>
+      <div class="prog-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Workpaper completeness">
+        <div class="prog-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+      <div class="prog-next" id="prog-next">Open an engagement to begin.</div>
+    </div>
+  </nav>
+
+  <!-- ==================== MAIN SHEET ==================== -->
+  <main class="main" id="main" tabindex="-1">
+  <div class="sheet">
+
+    <!-- ---------- STEP: PORTFOLIO ---------- -->
+    <section class="step" id="step-portfolio" aria-labelledby="h-portfolio">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Portfolio</span></div>
+          <h1 class="h-page" id="h-portfolio">Engagements</h1>
+          <p class="pg-desc">Every provision workpaper you have access to. Figures shown are the last computed position.</p>
+        </div>
+        <div class="pg-acts">
+          <button class="btn btn-line" id="btn-import-eng">Import</button>
+          <button class="btn btn-primary" id="btn-new-eng">New engagement</button>
+        </div>
+      </div>
+      <div class="row mb-16" style="gap:10px">
+        <label class="sr-only" for="eng-search">Search engagements</label>
+        <input class="inp grow" id="eng-search" placeholder="Search by client, CIN or year" style="text-align:left;max-width:320px">
+        <label class="sr-only" for="eng-filter">Filter by status</label>
+        <select class="inp" id="eng-filter" style="max-width:180px">
+          <option value="all">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="review">Under review</option>
+          <option value="signed">Signed off</option>
+        </select>
+      </div>
+      <div id="eng-list"></div>
+    </section>
+
+    <!-- ---------- STEP 1: CLIENT ---------- -->
+    <section class="step" id="step-client" aria-labelledby="h-client">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Step 1 of 8</span><span class="wpref">WP-1</span></div>
+          <h1 class="h-page" id="h-client">Client &amp; engagement</h1>
+          <p class="pg-desc">Set the entity, the reporting date and the rate. Everything downstream is measured at the rate entered here.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">Entity
+            <span class="card-sub">As it appears on the financial statements</span>
+          </div>
+          <span class="badge badge-indigo">Engagement master</span>
+        </div>
+        <div class="card-body">
+          <div class="fg c3">
+            <div class="field">
+              <label class="lbl" for="ci-name">Client name <span class="req" aria-hidden="true">*</span></label>
+              <input class="inp" id="ci-name" placeholder="ABC Manufacturing Private Limited" style="text-align:left">
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-cin">CIN</label>
+              <input class="inp mono" id="ci-cin" placeholder="U27100MH2011PTC221234" style="text-align:left">
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-pan">PAN</label>
+              <input class="inp mono" id="ci-pan" placeholder="AABCA1234B" maxlength="10" style="text-align:left">
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-fy">Financial year <span class="req" aria-hidden="true">*</span></label>
+              <input class="inp mono" id="ci-fy" placeholder="2025-26" style="text-align:left">
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-date">Reporting date <span class="req" aria-hidden="true">*</span></label>
+              <input class="inp" id="ci-date" type="date" style="text-align:left">
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-standard">Reporting framework</label>
+              <select class="inp" id="ci-standard">
+                <option value="indas12">Ind AS 12 — balance sheet approach</option>
+                <option value="as22">AS 22 — timing difference approach</option>
+              </select>
+              <p class="hint" id="as22-hint"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">Tax rate
+            <span class="card-sub">Enacted or substantively enacted at the reporting date — Ind AS 12.47</span>
+          </div>
+          <span class="wpref">WP-1/A</span>
+        </div>
+        <div class="card-body">
+          <div class="fg c3">
+            <div class="field">
+              <label class="lbl" for="ci-regime">Regime</label>
+              <select class="inp" id="ci-regime"></select>
+              <p class="hint" id="regime-note"></p>
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-rate">Applicable rate (%) <span class="req" aria-hidden="true">*</span></label>
+              <input class="inp mono" id="ci-rate" type="number" step="0.001" min="0" max="60">
+              <p class="hint">Base rate plus surcharge and cess. Applied to every deferred tax line.</p>
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-matrate">MAT rate (%)</label>
+              <input class="inp mono" id="ci-matrate" type="number" step="0.001" min="0" max="60">
+              <p class="hint">Section 115JB, inclusive of surcharge and cess.</p>
+            </div>
+          </div>
+          <hr class="divider">
+          <div class="fg c2">
+            <label class="sw">
+              <input type="checkbox" id="ci-applymat">
+              <span class="sw-track"></span>
+              <span>Test minimum alternate tax u/s 115JB</span>
+            </label>
+            <label class="sw">
+              <input type="checkbox" id="ci-offset">
+              <span class="sw-track"></span>
+              <span>Offset DTA against DTL in the balance sheet</span>
+            </label>
+          </div>
+          <p class="hint mt-8" id="offset-hint"></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">Opening balances
+            <span class="card-sub">Per the prior year signed financial statements</span>
+          </div>
+          <span class="wpref">WP-1/B</span>
+        </div>
+        <div class="card-body">
+          <div class="notice notice-info">
+            <span class="notice-tag">Why</span>
+            <span>These three figures are the control total for the deferred tax
+            schedule. The tally rail checks the sum of the per-line opening tax
+            effects against them, which is what catches a mis-keyed brought-forward figure.</span>
+          </div>
+          <div class="fg c3">
+            <div class="field">
+              <label class="lbl" for="ob-dta">Opening deferred tax asset</label>
+              <input class="inp mono" id="ob-dta" type="number" step="1">
+              <p class="hint">Non-current asset per prior year balance sheet</p>
+            </div>
+            <div class="field">
+              <label class="lbl" for="ob-dtl">Opening deferred tax liability</label>
+              <input class="inp mono" id="ob-dtl" type="number" step="1">
+              <p class="hint">Non-current liability per prior year balance sheet</p>
+            </div>
+            <div class="field">
+              <label class="lbl" for="ob-mat">Opening MAT credit entitlement</label>
+              <input class="inp mono" id="ob-mat" type="number" step="1">
+              <p class="hint">Section 115JAA, carried forward up to 15 years</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Sign-off</div><span class="wpref">WP-1/C</span></div>
+        <div class="card-body">
+          <div class="fg c3">
+            <div class="field">
+              <label class="lbl" for="ci-prep">Prepared by</label>
+              <input class="inp" id="ci-prep" placeholder="Name and designation" style="text-align:left">
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-rev">Reviewed by</label>
+              <input class="inp" id="ci-rev" placeholder="Name and designation" style="text-align:left">
+            </div>
+            <div class="field">
+              <label class="lbl" for="ci-prepdate">Date of preparation</label>
+              <input class="inp" id="ci-prepdate" type="date" style="text-align:left">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <span></span>
+        <button class="btn btn-primary" data-goto-step="current">Current tax →</button>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 2: CURRENT TAX ---------- -->
+    <section class="step" id="step-current" aria-labelledby="h-current">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Step 2 of 8</span><span class="wpref">WP-2</span></div>
+          <h1 class="h-page" id="h-current">Current tax</h1>
+          <p class="pg-desc">Reconcile profit before tax to taxable income. Enter every amount as a positive number — the type column controls the sign.</p>
+        </div>
+      </div>
+
+      <div class="notice notice-info">
+        <span class="notice-tag">Key</span>
+        <div><strong>Permanent</strong> differences never reverse, so they move the effective tax rate and appear in the rate reconciliation.
+        <strong>Temporary</strong> differences reverse in a later year, so each one must also appear in the deferred tax schedule.
+        Tagging each line correctly is what makes step 6 reconcile without a plug.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">Profit before tax to taxable income</div>
+          <span class="badge badge-neutral">Income Tax Act, 1961</span>
+        </div>
+        <div class="card-body-flush">
+          <div class="tbl-scroll">
+            <table class="wt">
+              <caption class="sr-only">Reconciliation of profit before tax to taxable income</caption>
+              <thead><tr>
+                <th style="width:34px">#</th>
+                <th style="width:86px">Type</th>
+                <th style="width:104px">Nature</th>
+                <th>Particulars</th>
+                <th class="r" style="width:160px">Amount</th>
+                <th style="width:36px"><span class="sr-only">Remove</span></th>
+              </tr></thead>
+              <tbody id="ct-body"></tbody>
+              <tfoot>
+                <tr><td colspan="4">Taxable income / (loss) for the year</td><td class="r" id="ct-taxable">—</td><td></td></tr>
+              </tfoot>
+            </table>
+          </div>
+          <button class="add-row" id="btn-add-ct">＋ Add adjustment</button>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Tax on income</div><span class="wpref">WP-2/A</span></div>
+          <div class="card-body-flush">
+            <table class="wt">
+              <caption class="sr-only">Tax on income for the year</caption>
+              <thead><tr><th>Particulars</th><th class="r" style="width:180px">Amount</th></tr></thead>
+              <tbody>
+                <tr><td>Taxable income</td><td class="r" id="ct2-ti">—</td></tr>
+                <tr><td>Rate applied</td><td class="r" id="ct2-rate">—</td></tr>
+                <tr class="row-sub"><td>Tax under the normal provisions</td><td class="r" id="ct2-normal">—</td></tr>
+              </tbody>
+            </table>
+            <div id="mat-block"></div>
+            <table class="wt">
+              <caption class="sr-only">Current tax expense</caption>
+              <thead class="sr-only"><tr><th>Particulars</th><th class="r">Amount</th></tr></thead>
+              <tbody>
+                <tr><td>Tax for the year</td><td class="r" id="ct2-year">—</td></tr>
+                <tr>
+                  <td><label for="ct-pyadj">Add / (less): tax of earlier years</label>
+                    <div class="ti-note">Short or excess provision — Ind AS 12.80(b)</div></td>
+                  <td class="r"><input class="ti num" id="ct-pyadj" type="number" step="1" style="max-width:150px"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="row-total"><td>Current tax expense</td><td class="r" id="ct2-expense">—</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">Payable or refundable</div><span class="wpref">WP-2/B</span></div>
+          <div class="card-body-flush">
+            <table class="wt">
+              <caption class="sr-only">Tax payable or refundable</caption>
+              <thead><tr><th>Particulars</th><th class="r" style="width:180px">Amount</th></tr></thead>
+              <tbody>
+                <tr><td>Current tax expense</td><td class="r" id="ct3-expense">—</td></tr>
+                <tr>
+                  <td><label for="ct-matutil">Less: MAT credit utilised</label>
+                    <div class="ti-note" id="matutil-note">Section 115JAA. Capped at the opening entitlement.</div></td>
+                  <td class="r"><input class="ti num" id="ct-matutil" type="number" step="1" min="0" style="max-width:150px"></td>
+                </tr>
+                <tr>
+                  <td><label for="ct-advance">Less: advance tax and tax deducted at source</label></td>
+                  <td class="r"><input class="ti num" id="ct-advance" type="number" step="1" min="0" style="max-width:150px"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="row-total"><td id="ct3-label">Net tax payable</td><td class="r" id="ct3-net">—</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-line" data-goto-step="client">← Client</button>
+        <button class="btn btn-primary" data-goto-step="deferred">Deferred tax →</button>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 3: DEFERRED TAX ---------- -->
+    <section class="step" id="step-deferred" aria-labelledby="h-deferred">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Step 3 of 8</span><span class="wpref">WP-3</span></div>
+          <h1 class="h-page" id="h-deferred">Deferred tax schedule</h1>
+          <p class="pg-desc">Compare the carrying amount of every asset and liability with its tax base. Each line carries its own opening tax effect, so the schedule articulates on its own.</p>
+        </div>
+        <div class="pg-acts">
+          <button class="btn btn-line btn-sm" id="btn-dt-cols">Show opening columns</button>
+        </div>
+      </div>
+
+      <div class="notice notice-info">
+        <span class="notice-tag">Rule</span>
+        <div>Temporary difference = carrying amount − tax base.
+        <strong>Assets:</strong> a carrying amount above the tax base is a taxable difference giving a liability.
+        <strong>Liabilities:</strong> a carrying amount above the tax base is a deductible difference giving an asset.
+        Where a provision is deductible only on payment, its tax base is nil — enter 0 rather than leaving it blank.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">A · Assets <span class="card-sub">Ind AS 12.16 – 12.17</span></div>
+          <span class="wpref">WP-3/A</span>
+        </div>
+        <div class="card-body-flush">
+          <div class="tbl-scroll"><table class="wt" id="tbl-assets">
+            <caption class="sr-only">Temporary differences on assets</caption>
+            <thead><tr>
+              <th style="width:34px">#</th>
+              <th>Particulars</th>
+              <th class="r" style="width:126px">Carrying amount<span class="th-sub">Books</span></th>
+              <th class="r" style="width:126px">Tax base<span class="th-sub">IT Act</span></th>
+              <th class="r" style="width:118px">Difference</th>
+              <th class="c" style="width:62px">Gives</th>
+              <th class="r dt-open-col" style="width:118px">Opening effect<span class="th-sub">DTA + / DTL −</span></th>
+              <th class="r" style="width:120px">Closing effect</th>
+              <th class="c" style="width:78px">Route</th>
+              <th class="c" style="width:64px">Recog.</th>
+              <th style="width:36px"><span class="sr-only">Remove</span></th>
+            </tr></thead>
+            <tbody id="dt-asset-body"></tbody>
+            <tfoot id="dt-asset-foot"></tfoot>
+          </table></div>
+          <button class="add-row" data-add-dt="assets">＋ Add asset line</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">B · Liabilities and provisions <span class="card-sub">Ind AS 12.15</span></div>
+          <span class="wpref">WP-3/B</span>
+        </div>
+        <div class="card-body-flush">
+          <div class="tbl-scroll"><table class="wt" id="tbl-liabs">
+            <caption class="sr-only">Temporary differences on liabilities and provisions</caption>
+            <thead><tr>
+              <th style="width:34px">#</th>
+              <th>Particulars</th>
+              <th class="r" style="width:126px">Carrying amount<span class="th-sub">Books</span></th>
+              <th class="r" style="width:126px">Tax base<span class="th-sub">IT Act</span></th>
+              <th class="r" style="width:118px">Difference</th>
+              <th class="c" style="width:62px">Gives</th>
+              <th class="r dt-open-col" style="width:118px">Opening effect<span class="th-sub">DTA + / DTL −</span></th>
+              <th class="r" style="width:120px">Closing effect</th>
+              <th class="c" style="width:78px">Route</th>
+              <th class="c" style="width:64px">Recog.</th>
+              <th style="width:36px"><span class="sr-only">Remove</span></th>
+            </tr></thead>
+            <tbody id="dt-liab-body"></tbody>
+            <tfoot id="dt-liab-foot"></tfoot>
+          </table></div>
+          <button class="add-row" data-add-dt="liabs">＋ Add liability line</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">C · Losses and credits <span class="card-sub">Ind AS 12.34 – 12.36</span></div>
+          <span class="wpref">WP-3/C</span>
+        </div>
+        <div class="card-body-flush">
+          <div class="notice notice-warn" style="margin:14px 18px 0">
+            <span class="notice-tag">Watch</span>
+            <span>A carried-forward loss is a gross amount and is multiplied by the rate.
+            A tax credit is already a tax amount — switch on <strong>Already a tax amount</strong>
+            so it is not taxed a second time.</span>
+          </div>
+          <div class="tbl-scroll"><table class="wt" id="tbl-others">
+            <caption class="sr-only">Unused tax losses and credits</caption>
+            <thead><tr>
+              <th style="width:34px">#</th>
+              <th>Particulars</th>
+              <th class="r" style="width:150px">Amount</th>
+              <th class="c" style="width:88px">Side</th>
+              <th class="c" style="width:96px">Tax amount?</th>
+              <th class="r dt-open-col" style="width:118px">Opening effect</th>
+              <th class="r" style="width:120px">Closing effect</th>
+              <th class="c" style="width:64px">Recog.</th>
+              <th style="width:150px">Expiry</th>
+              <th style="width:36px"><span class="sr-only">Remove</span></th>
+            </tr></thead>
+            <tbody id="dt-other-body"></tbody>
+            <tfoot id="dt-other-foot"></tfoot>
+          </table></div>
+          <button class="add-row" data-add-dt="others">＋ Add loss or credit</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Consolidated position</div><span class="wpref">WP-3/D</span></div>
+        <div class="card-body-flush"><div id="dt-summary"></div></div>
+      </div>
+
+      <div id="unrec-block"></div>
+
+      <div class="step-nav">
+        <button class="btn btn-line" data-goto-step="current">← Current tax</button>
+        <button class="btn btn-primary" data-goto-step="movement">Movement →</button>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 4: MOVEMENT ---------- -->
+    <section class="step" id="step-movement" aria-labelledby="h-movement">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Step 4 of 8</span><span class="wpref">WP-4</span></div>
+          <h1 class="h-page" id="h-movement">Movement schedule</h1>
+          <p class="pg-desc">Opening plus movement equals closing, with the movement split between profit or loss and other comprehensive income.</p>
+        </div>
+      </div>
+      <div id="movement-body"></div>
+      <div class="step-nav">
+        <button class="btn btn-line" data-goto-step="deferred">← Deferred tax</button>
+        <button class="btn btn-primary" data-goto-step="summary">Summary →</button>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 5: SUMMARY ---------- -->
+    <section class="step" id="step-summary" aria-labelledby="h-summary">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Step 5 of 8</span><span class="wpref">WP-5</span></div>
+          <h1 class="h-page" id="h-summary">Summary &amp; journals</h1>
+          <p class="pg-desc">The provision as it lands in the financial statements, with the entries to post it.</p>
+        </div>
+        <div class="pg-acts"><button class="btn btn-line btn-sm" id="btn-copy-je">Copy journals</button></div>
+      </div>
+      <div class="kpis" id="kpi-strip"></div>
+      <div id="summary-body"></div>
+      <div id="je-body"></div>
+      <div class="step-nav">
+        <button class="btn btn-line" data-goto-step="movement">← Movement</button>
+        <button class="btn btn-primary" data-goto-step="etr">Effective rate →</button>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 6: ETR ---------- -->
+    <section class="step" id="step-etr" aria-labelledby="h-etr">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Step 6 of 8</span><span class="wpref">WP-6</span></div>
+          <h1 class="h-page" id="h-etr">Effective rate reconciliation</h1>
+          <p class="pg-desc">Every line is derived from the data already entered. A material residual means something is unexplained, not that the reconciliation is finished.</p>
+        </div>
+      </div>
+      <div id="etr-body"></div>
+      <div class="step-nav">
+        <button class="btn btn-line" data-goto-step="summary">← Summary</button>
+        <button class="btn btn-primary" data-goto-step="disclosure">Disclosure →</button>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 7: DISCLOSURE ---------- -->
+    <section class="step" id="step-disclosure" aria-labelledby="h-disclosure">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Step 7 of 8</span><span class="wpref">WP-7</span></div>
+          <h1 class="h-page" id="h-disclosure">Disclosure note</h1>
+          <p class="pg-desc">Draft note for the financial statements, per Ind AS 12.79 to 12.88. Copy it straight into the annual report and edit for house style.</p>
+        </div>
+        <div class="pg-acts">
+          <button class="btn btn-line btn-sm" id="btn-copy-note">Copy note</button>
+          <button class="btn btn-line btn-sm" id="btn-print-note">Print</button>
+        </div>
+      </div>
+      <div class="card"><div class="card-body"><div id="disclosure-body"></div></div></div>
+      <div class="step-nav">
+        <button class="btn btn-line" data-goto-step="etr">← Effective rate</button>
+        <button class="btn btn-primary" data-goto-step="checklist">Checklist →</button>
+      </div>
+    </section>
+
+    <!-- ---------- STEP 8: CHECKLIST ---------- -->
+    <section class="step" id="step-checklist" aria-labelledby="h-checklist">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-eye"><span class="eyebrow">Step 8 of 8</span><span class="wpref">WP-8</span></div>
+          <h1 class="h-page" id="h-checklist">Checklist &amp; sign-off</h1>
+          <p class="pg-desc">Mark each point done, not applicable, or raise a query. Every mark records who made it and when.</p>
+        </div>
+        <div class="pg-acts">
+          <button class="btn btn-line btn-sm" id="btn-chk-clear">Clear all marks</button>
+        </div>
+      </div>
+      <div id="checklist-summary"></div>
+      <div class="card"><div class="card-body-flush" id="checklist-body"></div></div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">Reviewer notes</div></div>
+        <div class="card-body">
+          <div class="field">
+            <label class="lbl" for="eng-notes">Notes carried with this workpaper</label>
+            <textarea class="inp" id="eng-notes" rows="4" placeholder="Matters for the file, judgements taken, points for the partner."></textarea>
+          </div>
+        </div>
+      </div>
+      <div id="signoff-body"></div>
+      <div class="step-nav">
+        <button class="btn btn-line" data-goto-step="disclosure">← Disclosure</button>
+        <span></span>
+      </div>
+    </section>
+
+  </div>
+  </main>
+
+  <!-- ==================== TALLY RAIL ==================== -->
+  <aside class="rail" id="rail" aria-label="Tallies and checks">
+    <div class="rail-hdr">
+      <div class="rail-title">
+        <span class="rail-h">Tallies</span>
+        <button class="btn btn-quiet btn-sm rail-toggle" id="btn-rail-close" aria-label="Hide tallies">✕</button>
+      </div>
+    </div>
+    <div class="rail-scroll" id="rail-body"></div>
+  </aside>
+
+</div>
+
+<div class="toast-wrap" id="toast-wrap" role="status" aria-live="polite"></div>
+
+<!-- Hidden print surface, populated on demand -->
+<div id="print-root" class="print-only"></div>
+
+<script src="js/core/util.js"></script>
+<script src="js/core/store.js"></script>
+<script src="js/core/hash.js"></script>
+<script src="js/core/auth.js"></script>
+<script src="js/compute.js"></script>
+<script src="js/render.js"></script>
+<script src="js/state.js"></script>
+<script src="js/export.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
