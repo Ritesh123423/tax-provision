@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax Provision Workpaper — K G Somani & Co LLP</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --ink: #1a1f2e;
+    --ink-light: #4a5068;
+    --ink-muted: #8892a4;
+    --bg: #f7f8fc;
+    --surface: #ffffff;
+    --border: #e2e6f0;
+    --border-strong: #c8cfe0;
+    --accent: #1e40af;
+    --accent-light: #eff4ff;
+    --accent-mid: #3b5bdb;
+    --green: #0f7853;
+    --green-light: #ecfdf5;
+    --red: #b91c1c;
+    --red-light: #fef2f2;
+    --amber: #92400e;
+    --amber-light: #fffbeb;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    --radius: 8px;
+    --radius-sm: 4px;
+    --font: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--ink);
+    color: #fff;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-brand { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    width: 32px; height: 32px;
+    background: var(--accent-mid);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff; letter-spacing: -0.5px;
+  }
+  .header-title { font-weight: 600; font-size: 14px; letter-spacing: 0.01em; }
+  .header-sub { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+  .header-actions { display: flex; gap: 8px; }
+  .btn-header {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font);
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .btn-header:hover { background: rgba(255,255,255,0.18); }
+  .btn-header.primary {
+    background: var(--accent-mid);
+    border-color: var(--accent-mid);
+  }
+  .btn-header.primary:hover { background: #2f4ec9; }
+
+  /* ── LAYOUT ── */
+  .shell { display: flex; min-height: calc(100vh - 56px); }
+
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    flex-shrink: 0;
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+  }
+  .sidebar-section { margin-bottom: 4px; }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding: 8px 20px 4px;
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    cursor: pointer;
+    color: var(--ink-light);
+    font-weight: 500;
+    font-size: 12.5px;
+    border-left: 2px solid transparent;
+    transition: all 0.12s;
+    text-decoration: none;
+  }
+  .sidebar-item:hover { background: var(--bg); color: var(--ink); }
+  .sidebar-item.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+  .sidebar-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  .main { flex: 1; padding: 28px 32px; max-width: 1100px; }
+
+  /* ── SECTION CARDS ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fafbfd;
+  }
+  .card-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--accent-light);
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .card-body { padding: 20px; }
+
+  /* ── CLIENT INFO GRID ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .info-grid.two { grid-template-columns: repeat(2, 1fr); }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .field-input {
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--surface);
+    transition: border-color 0.12s, box-shadow 0.12s;
+    width: 100%;
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--accent-mid);
+    box-shadow: 0 0 0 3px rgba(59,91,219,0.1);
+  }
+  select.field-input { cursor: pointer; }
+
+  /* ── TABLES ── */
+  .wp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .wp-table th {
+    background: #f1f4fb;
+    color: var(--ink-light);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .wp-table th.num { text-align: right; }
+  .wp-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .wp-table td.num {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .wp-table tr:last-child td { border-bottom: none; }
+  .wp-table tr:hover td { background: #fafbfd; }
+  .wp-table .subtotal td {
+    background: #f4f6fb;
+    font-weight: 600;
+    border-top: 1px solid var(--border-strong);
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .wp-table .total td {
+    background: var(--ink);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .wp-table .total td.num { font-family: var(--mono); }
+
+  .table-input {
+    border: none;
+    background: transparent;
+    font-family: var(--font);
+    font-size: 12.5px;
+    color: var(--ink);
+    width: 100%;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background 0.1s;
+  }
+  .table-input:focus {
+    outline: none;
+    background: var(--accent-light);
+  }
+  .table-input.num {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .table-input.select-inline {
+    cursor: pointer;
+  }
+
+  /* ── ADD ROW BUTTON ── */
+  .add-row-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 6px 12px;
+    background: none;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--ink-muted);
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.12s;
+  }
+  .add-row-btn:hover {
+    border-color: var(--accent-mid);
+    color: var(--accent-mid);
+    background: var(--accent-light);
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--ink-muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.1s;
+  }
+  .del-btn:hover { background: var(--red-light); color: var(--red); }
+
+  /* ── SUMMARY BOXES ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .summary-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .summary-box .label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .summary-box .value {
+    font-size: 22px;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--ink);
+    letter-spacing: -0.5px;
+  }
+  .summary-box .sub {
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 3px;
+  }
+  .summary-box.green { border-left: 3px solid var(--green); }
+  .summary-box.green .value { color: var(--green); }
+  .summary-box.red { border-left: 3px solid var(--red); }
+  .summary-box.red .value { color: var(--red); }
+  .summary-box.blue { border-left: 3px solid var(--accent-mid); }
+  .summary-box.blue .value { color: var(--accent-mid); }
+  .summary-box.amber { border-left: 3px solid #d97706; }
+  .summary-box.amber .value { color: #b45309; }
+
+  /* ── PAGE TITLE ── */
+  .page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .page-title { font-size: 20px; font-weight: 700; color: var(--ink); }
+  .page-desc { font-size: 12.5px; color: var(--ink-muted); margin-top: 3px; }
+
+  /* ── TAX NATURE TOGGLE ── */
+  .nature-pill {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .nature-pill.dta { background: var(--green-light); color: var(--green); }
+  .nature-pill.dtl { background: var(--red-light); color: var(--red); }
+
+  /* ── JE OUTPUT ── */
+  .je-box {
+    background: #0f172a;
+    border-radius: var(--radius);
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: #e2e8f0;
+    line-height: 1.8;
+  }
+  .je-box .je-head { color: #94a3b8; font-size: 11px; margin-bottom: 12px; letter-spacing: 0.05em; }
+  .je-box .dr { color: #93c5fd; }
+  .je-box .cr { color: #86efac; padding-left: 40px; }
+  .je-box .amt { color: #fbbf24; }
+  .je-box .narr { color: #64748b; font-size: 11px; margin-top: 8px; }
+
+  /* ── PRINT ── */
+  @media print {
+    .header, .sidebar, .btn-header, .add-row-btn, .del-btn, .page-head .btn-group { display: none !important; }
+    .shell { display: block; }
+    .main { padding: 0; max-width: 100%; }
+    .section { display: block !important; }
+    .card { box-shadow: none; page-break-inside: avoid; }
+    body { background: white; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .info-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .note-box {
+    background: var(--amber-light);
+    border: 1px solid #fde68a;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .tab {
+    padding: 8px 16px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.12s;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .pill-green { background: var(--green-light); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill-red { background: var(--red-light); color: var(--red); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .pill-blue { background: var(--accent-light); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">KGS</div>
+    <div>
+      <div class="header-title">Tax Provision Workpaper</div>
+      <div class="header-sub">K G Somani & Co LLP — Ind AS 12</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-header" onclick="window.print()">⎙ Print / PDF</button>
+    <button class="btn-header primary" onclick="computeAll()">▶ Compute</button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Workpaper</div>
+      <a class="sidebar-item active" onclick="navigate('client')">
+        <span class="sidebar-dot"></span> Client Info
+      </a>
+      <a class="sidebar-item" onclick="navigate('current')">
+        <span class="sidebar-dot"></span> Current Tax
+      </a>
+      <a class="sidebar-item" onclick="navigate('deferred')">
+        <span class="sidebar-dot"></span> Deferred Tax
+      </a>
+      <a class="sidebar-item" onclick="navigate('movement')">
+        <span class="sidebar-dot"></span> DTA/DTL Movement
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Output</div>
+      <a class="sidebar-item" onclick="navigate('summary')">
+        <span class="sidebar-dot"></span> Summary & JE
+      </a>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ══ CLIENT INFO ══ -->
+    <section class="section active" id="sec-client">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Client Information</div>
+          <div class="page-desc">Enter engagement details before computing the provision.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Engagement Details</div>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div class="field-group">
+              <label class="field-label">Client Name</label>
+              <input class="field-input" id="ci-name" placeholder="e.g. ABC Private Limited" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">CIN / PAN</label>
+              <input class="field-input" id="ci-cin" placeholder="e.g. U74999MH2010PTC..." />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Financial Year</label>
+              <input class="field-input" id="ci-fy" placeholder="e.g. 2024-25" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Period End Date</label>
+              <input class="field-input" type="date" id="ci-date" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Applicable Tax Rate (%)</label>
+              <input class="field-input" id="ci-rate" type="number" value="25.168" step="0.001" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">MAT Rate (%)</label>
+              <input class="field-input" id="ci-mat" type="number" value="17.472" step="0.001" />
+            </div>
+          </div>
+          <hr class="divider">
+          <div class="info-grid">
+            <div class="field-group">
+              <label class="field-label">Prepared By</label>
+              <input class="field-input" id="ci-prep" placeholder="Name & designation" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Reviewed By</label>
+              <input class="field-input" id="ci-rev" placeholder="Name & designation" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Date of Preparation</label>
+              <input class="field-input" type="date" id="ci-prepdate" />
+            </div>
+          </div>
+          <hr class="divider">
+          <div class="info-grid two">
+            <div class="field-group">
+              <label class="field-label">Reporting Standard</label>
+              <select class="field-input" id="ci-standard">
+                <option value="indas12">Ind AS 12 — Income Taxes (Balance Sheet Approach)</option>
+                <option value="as22">AS 22 — Income Taxes (Income Statement Approach)</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Tax Regime</label>
+              <select class="field-input" id="ci-regime">
+                <option value="new">New Regime — Sec 115BAA (25.168% incl. surcharge + cess)</option>
+                <option value="old">Old Regime (30% + surcharge + cess)</option>
+                <option value="mat">MAT u/s 115JB applicable</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Opening Balances <span class="badge">Prior Year</span></div>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div class="field-group">
+              <label class="field-label">Opening DTA (₹)</label>
+              <input class="field-input" id="ob-dta" type="number" value="0" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Opening DTL (₹)</label>
+              <input class="field-input" id="ob-dtl" type="number" value="0" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Opening MAT Credit (₹)</label>
+              <input class="field-input" id="ob-mat" type="number" value="0" placeholder="0" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ CURRENT TAX ══ -->
+    <section class="section" id="sec-current">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Current Tax Computation</div>
+          <div class="page-desc">Book profit to taxable income — add-backs and deductions per Income Tax Act.</div>
+        </div>
+        <div>
+          <button class="btn-header primary" style="background:var(--accent-mid);border-color:var(--accent-mid);color:#fff" onclick="computeAll()">▶ Compute</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Book Profit to Taxable Income</div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Particulars</th>
+                <th class="num" style="width:180px">Amount (₹)</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="ct-body">
+              <!-- rows injected by JS -->
+            </tbody>
+            <tfoot>
+              <tr class="total">
+                <td colspan="2">Taxable Income / (Loss)</td>
+                <td class="num" id="ct-taxable">—</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="padding:12px 20px; border-top:1px solid var(--border)">
+          <button class="add-row-btn" onclick="addCtRow()">+ Add line item</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Current Tax & MAT</div>
+        </div>
+        <div class="card-body">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th>Particulars</th>
+                <th class="num">Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Taxable Income / (Book Profit for MAT)</td><td class="num" id="ct2-ti">—</td></tr>
+              <tr><td>Tax Rate Applied</td><td class="num" id="ct2-rate">—</td></tr>
+              <tr class="subtotal"><td>Tax on Taxable Income</td><td class="num" id="ct2-tax">—</td></tr>
+              <tr><td>Less: MAT Credit Utilised (if applicable)</td><td class="num"><input class="table-input num" id="ct-matutil" type="number" value="0" onchange="computeAll()"/></td></tr>
+              <tr class="subtotal"><td>Less: TDS / Advance Tax</td><td class="num"><input class="table-input num" id="ct-tds" type="number" value="0" onchange="computeAll()"/></td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="total">
+                <td>Net Current Tax Payable / (Refund)</td>
+                <td class="num" id="ct2-net">—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ DEFERRED TAX ══ -->
+    <section class="section" id="sec-deferred">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Deferred Tax Schedule</div>
+          <div class="page-desc">Balance sheet approach per Ind AS 12 — temporary differences on each asset/liability.</div>
+        </div>
+        <div>
+          <button class="btn-header primary" style="background:var(--accent-mid);border-color:var(--accent-mid);color:#fff" onclick="computeAll()">▶ Compute</button>
+        </div>
+      </div>
+
+      <div class="note-box">
+        ⚠ &nbsp;<span>Under Ind AS 12 (balance sheet approach), deferred tax is computed on <strong>temporary differences</strong> = Carrying Amount (Ind AS) minus Tax Base (Income Tax Act). A positive difference on an asset creates DTL; negative creates DTA.</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Temporary Differences — Assets <span class="badge">Ind AS 12</span></div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Particulars</th>
+                <th class="num">Carrying Amt (₹)</th>
+                <th class="num">Tax Base (₹)</th>
+                <th class="num">Temp. Diff (₹)</th>
+                <th class="num">DTA / DTL</th>
+                <th class="num">Tax Effect (₹)</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="dt-asset-body"></tbody>
+            <tfoot>
+              <tr class="subtotal">
+                <td colspan="4">Net Temporary Difference — Assets</td>
+                <td class="num" id="dt-asset-diff">—</td>
+                <td></td>
+                <td class="num" id="dt-asset-tax">—</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="padding:12px 20px; border-top:1px solid var(--border)">
+          <button class="add-row-btn" onclick="addDtRow('asset')">+ Add asset item</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Temporary Differences — Liabilities & Provisions</div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Particulars</th>
+                <th class="num">Carrying Amt (₹)</th>
+                <th class="num">Tax Base (₹)</th>
+                <th class="num">Temp. Diff (₹)</th>
+                <th class="num">DTA / DTL</th>
+                <th class="num">Tax Effect (₹)</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="dt-liab-body"></tbody>
+            <tfoot>
+              <tr class="subtotal">
+                <td colspan="4">Net Temporary Difference — Liabilities</td>
+                <td class="num" id="dt-liab-diff">—</td>
+                <td></td>
+                <td class="num" id="dt-liab-tax">—</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="padding:12px 20px; border-top:1px solid var(--border)">
+          <button class="add-row-btn" onclick="addDtRow('liab')">+ Add liability item</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Other Deferred Items</div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th style="width:40px">#</th>
+                <th>Particulars</th>
+                <th class="num">Amount (₹)</th>
+                <th class="num">DTA / DTL</th>
+                <th class="num">Tax Effect (₹)</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="dt-other-body"></tbody>
+            <tfoot>
+              <tr class="subtotal">
+                <td colspan="3">Net Other Deferred Items</td>
+                <td></td>
+                <td class="num" id="dt-other-tax">—</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="padding:12px 20px; border-top:1px solid var(--border)">
+          <button class="add-row-btn" onclick="addDtOther()">+ Add item</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ MOVEMENT ══ -->
+    <section class="section" id="sec-movement">
+      <div class="page-head">
+        <div>
+          <div class="page-title">DTA / DTL Movement Schedule</div>
+          <div class="page-desc">Opening → current year charge/credit → closing position.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Movement — Deferred Tax Asset</div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th>Particulars</th>
+                <th class="num">Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Opening DTA (as per prior year)</td><td class="num" id="mv-dta-open">—</td></tr>
+              <tr><td>Add: DTA recognised this year</td><td class="num" id="mv-dta-add">—</td></tr>
+              <tr><td>Less: DTA reversed / utilised this year</td><td class="num" id="mv-dta-less">—</td></tr>
+              <tr><td>Add: MAT Credit Entitlement this year</td><td class="num"><input class="table-input num" id="mv-mat-new" type="number" value="0" onchange="computeAll()"/></td></tr>
+              <tr><td>Less: MAT Credit Utilised this year</td><td class="num" id="mv-mat-used">—</td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="total">
+                <td>Closing DTA (to Balance Sheet)</td>
+                <td class="num" id="mv-dta-close">—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Movement — Deferred Tax Liability</div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="wp-table">
+            <thead>
+              <tr>
+                <th>Particulars</th>
+                <th class="num">Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Opening DTL (as per prior year)</td><td class="num" id="mv-dtl-open">—</td></tr>
+              <tr><td>Add: DTL created this year</td><td class="num" id="mv-dtl-add">—</td></tr>
+              <tr><td>Less: DTL reversed this year</td><td class="num" id="mv-dtl-less">—</td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="total">
+                <td>Closing DTL (to Balance Sheet)</td>
+                <td class="num" id="mv-dtl-close">—</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SUMMARY & JE ══ -->
+    <section class="section" id="sec-summary">
+      <div class="page-head">
+        <div>
+          <div class="page-title">Summary & Journal Entries</div>
+          <div class="page-desc">Final provision figures and accounting entries for the year.</div>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-box blue">
+          <div class="label">Current Tax</div>
+          <div class="value" id="sum-ct">₹0</div>
+          <div class="sub">P&L charge this year</div>
+        </div>
+        <div class="summary-box" id="sum-dt-box">
+          <div class="label">Deferred Tax (Net)</div>
+          <div class="value" id="sum-dt">₹0</div>
+          <div class="sub" id="sum-dt-sub">charge / (credit)</div>
+        </div>
+        <div class="summary-box amber">
+          <div class="label">Total Tax Expense</div>
+          <div class="value" id="sum-total">₹0</div>
+          <div class="sub">P&L — Income tax expense</div>
+        </div>
+        <div class="summary-box">
+          <div class="label">Effective Tax Rate</div>
+          <div class="value" id="sum-etr">—%</div>
+          <div class="sub">vs statutory <span id="sum-statutory">—%</span></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Journal Entry — Current Tax</div></div>
+          <div class="card-body">
+            <div class="je-box" id="je-current">—</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Journal Entry — Deferred Tax</div></div>
+          <div class="card-body">
+            <div class="je-box" id="je-deferred">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Disclosure Note — Ind AS 12</div></div>
+        <div class="card-body">
+          <div id="disclosure-note" style="font-size:12.5px;line-height:1.9;color:var(--ink-light)">
+            Click <strong>Compute</strong> to generate the disclosure note.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Auditor's Checklist — Deferred Tax</div></div>
+        <div class="card-body" style="padding:0">
+          <table class="wp-table">
+            <thead>
+              <tr><th>Check Point</th><th style="width:120px;text-align:center">Status</th></tr>
+            </thead>
+            <tbody id="checklist-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+const state = {
+  ctRows: [],
+  dtAsset: [],
+  dtLiab: [],
+  dtOther: []
+};
+
+// ── DEFAULT ROWS ──
+function initDefaults() {
+  state.ctRows = [
+    { id: uid(), label: 'Net Profit as per Statement of Profit & Loss', amt: 0, type: 'book' },
+    { id: uid(), label: 'Add: Depreciation as per Companies Act (added back)', amt: 0, type: 'add' },
+    { id: uid(), label: 'Less: Depreciation as per Income Tax Act (Sec 32)', amt: 0, type: 'less' },
+    { id: uid(), label: 'Add: Provision for Gratuity / Leave Encashment (disallowed u/s 40A)', amt: 0, type: 'add' },
+    { id: uid(), label: 'Add: Provision for Doubtful Debts (disallowed)', amt: 0, type: 'add' },
+    { id: uid(), label: 'Add: Expenses disallowed u/s 43B (payable basis)', amt: 0, type: 'add' },
+    { id: uid(), label: 'Less: 43B items paid before due date of filing', amt: 0, type: 'less' },
+    { id: uid(), label: 'Add: Penalty / fines / personal expenses', amt: 0, type: 'add' },
+    { id: uid(), label: 'Less: Exempt income (Dividends u/s 10(34))', amt: 0, type: 'less' },
+    { id: uid(), label: 'Less: Deduction u/s 80IC / 80JJAA / other Chapter VI-A', amt: 0, type: 'less' },
+  ];
+
+  state.dtAsset = [
+    { id: uid(), label: 'Property, Plant & Equipment — Net Block', ca: 0, tb: 0 },
+    { id: uid(), label: 'Capital Work-in-Progress', ca: 0, tb: 0 },
+    { id: uid(), label: 'Intangible Assets', ca: 0, tb: 0 },
+    { id: uid(), label: 'Right-of-Use Assets (Ind AS 116)', ca: 0, tb: 0 },
+    { id: uid(), label: 'Investments (measured at FVTPL / FVOCI)', ca: 0, tb: 0 },
+  ];
+
+  state.dtLiab = [
+    { id: uid(), label: 'Provision for Gratuity (Defined Benefit)', ca: 0, tb: 0 },
+    { id: uid(), label: 'Provision for Leave Encashment', ca: 0, tb: 0 },
+    { id: uid(), label: 'Provision for Bonus (43B)', ca: 0, tb: 0 },
+    { id: uid(), label: 'Provision for Doubtful Debts / ECL (Ind AS 109)', ca: 0, tb: 0 },
+    { id: uid(), label: 'Lease Liability (Ind AS 116)', ca: 0, tb: 0 },
+    { id: uid(), label: 'Other Provisions / Contingent Liabilities', ca: 0, tb: 0 },
+  ];
+
+  state.dtOther = [
+    { id: uid(), label: 'Unabsorbed Depreciation (Sec 32(2))', amt: 0, type: 'dta' },
+    { id: uid(), label: 'Business Loss Carry Forward', amt: 0, type: 'dta' },
+    { id: uid(), label: 'MAT Credit Entitlement u/s 115JAA', amt: 0, type: 'dta' },
+  ];
+
+  renderAll();
+}
+
+function uid() { return '_' + Math.random().toString(36).substr(2, 9); }
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function navigate(sec) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ══════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════
+function renderAll() {
+  renderCtRows();
+  renderDtAsset();
+  renderDtLiab();
+  renderDtOther();
+}
+
+function renderCtRows() {
+  const tbody = document.getElementById('ct-body');
+  tbody.innerHTML = '';
+  state.ctRows.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--ink-muted);font-size:11px">${i + 1}</td>
+      <td>
+        <select class="table-input select-inline" onchange="updateCtRow('${row.id}','type',this.value)" style="width:60px;margin-right:6px">
+          <option value="book" ${row.type==='book'?'selected':''}>Book</option>
+          <option value="add" ${row.type==='add'?'selected':''}>Add</option>
+          <option value="less" ${row.type==='less'?'selected':''}>Less</option>
+        </select>
+        <input class="table-input" value="${row.label}" onchange="updateCtRow('${row.id}','label',this.value)" style="width:calc(100% - 80px)" />
+      </td>
+      <td class="num">
+        <input class="table-input num" type="number" value="${row.amt}" onchange="updateCtRow('${row.id}','amt',+this.value)" />
+      </td>
+      <td><button class="del-btn" onclick="delCtRow('${row.id}')">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderDtAsset() {
+  const tbody = document.getElementById('dt-asset-body');
+  tbody.innerHTML = '';
+  const rate = +document.getElementById('ci-rate').value / 100 || 0.25168;
+  state.dtAsset.forEach((row, i) => {
+    const diff = (row.ca || 0) - (row.tb || 0);
+    // For assets: CA > TB → DTL (accelerated tax dep); CA < TB → DTA
+    const taxEffect = Math.abs(diff) * rate;
+    const nature = diff > 0 ? 'dtl' : diff < 0 ? 'dta' : '';
+    tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--ink-muted);font-size:11px">${i+1}</td>
+      <td><input class="table-input" value="${row.label}" onchange="updateDt('asset','${row.id}','label',this.value)" /></td>
+      <td class="num"><input class="table-input num" type="number" value="${row.ca}" onchange="updateDt('asset','${row.id}','ca',+this.value);computeAll()" /></td>
+      <td class="num"><input class="table-input num" type="number" value="${row.tb}" onchange="updateDt('asset','${row.id}','tb',+this.value);computeAll()" /></td>
+      <td class="num" style="font-family:var(--mono)">${fmt(diff)}</td>
+      <td><span class="nature-pill ${nature}">${nature.toUpperCase() || '—'}</span></td>
+      <td class="num" style="font-family:var(--mono)">${diff !== 0 ? fmt(taxEffect) : '—'}</td>
+      <td><button class="del-btn" onclick="delDt('asset','${row.id}')">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderDtLiab() {
+  const tbody = document.getElementById('dt-liab-body');
+  tbody.innerHTML = '';
+  const rate = +document.getElementById('ci-rate').value / 100 || 0.25168;
+  state.dtLiab.forEach((row, i) => {
+    const diff = (row.ca || 0) - (row.tb || 0);
+    // For liabilities: CA > TB → DTA (provision disallowed = DTA); CA < TB → DTL
+    const nature = diff > 0 ? 'dta' : diff < 0 ? 'dtl' : '';
+    const taxEffect = Math.abs(diff) * rate;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--ink-muted);font-size:11px">${i+1}</td>
+      <td><input class="table-input" value="${row.label}" onchange="updateDt('liab','${row.id}','label',this.value)" /></td>
+      <td class="num"><input class="table-input num" type="number" value="${row.ca}" onchange="updateDt('liab','${row.id}','ca',+this.value);computeAll()" /></td>
+      <td class="num"><input class="table-input num" type="number" value="${row.tb}" onchange="updateDt('liab','${row.id}','tb',+this.value);computeAll()" /></td>
+      <td class="num" style="font-family:var(--mono)">${fmt(diff)}</td>
+      <td><span class="nature-pill ${nature}">${nature.toUpperCase() || '—'}</span></td>
+      <td class="num" style="font-family:var(--mono)">${diff !== 0 ? fmt(taxEffect) : '—'}</td>
+      <td><button class="del-btn" onclick="delDt('liab','${row.id}')">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderDtOther() {
+  const tbody = document.getElementById('dt-other-body');
+  tbody.innerHTML = '';
+  const rate = +document.getElementById('ci-rate').value / 100 || 0.25168;
+  state.dtOther.forEach((row, i) => {
+    const taxEffect = (row.amt || 0) * rate;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--ink-muted);font-size:11px">${i+1}</td>
+      <td><input class="table-input" value="${row.label}" onchange="updateDtOther('${row.id}','label',this.value)" /></td>
+      <td class="num"><input class="table-input num" type="number" value="${row.amt}" onchange="updateDtOther('${row.id}','amt',+this.value);computeAll()" /></td>
+      <td><span class="nature-pill ${row.type}">${row.type.toUpperCase()}</span>
+        <select class="table-input select-inline" onchange="updateDtOther('${row.id}','type',this.value);computeAll()" style="width:55px;margin-left:4px">
+          <option value="dta" ${row.type==='dta'?'selected':''}>DTA</option>
+          <option value="dtl" ${row.type==='dtl'?'selected':''}>DTL</option>
+        </select>
+      </td>
+      <td class="num" style="font-family:var(--mono)">${row.amt ? fmt(taxEffect) : '—'}</td>
+      <td><button class="del-btn" onclick="delDtOther('${row.id}')">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ══════════════════════════════════════
+// STATE UPDATERS
+// ══════════════════════════════════════
+function updateCtRow(id, field, val) {
+  const row = state.ctRows.find(r => r.id === id);
+  if (row) { row[field] = field === 'amt' ? +val : val; computeAll(); }
+}
+function addCtRow() {
+  state.ctRows.push({ id: uid(), label: 'New item', amt: 0, type: 'add' });
+  renderCtRows();
+}
+function delCtRow(id) {
+  state.ctRows = state.ctRows.filter(r => r.id !== id);
+  renderCtRows(); computeAll();
+}
+
+function updateDt(section, id, field, val) {
+  const arr = section === 'asset' ? state.dtAsset : state.dtLiab;
+  const row = arr.find(r => r.id === id);
+  if (row) row[field] = field === 'label' ? val : +val;
+}
+function addDtRow(section) {
+  const row = { id: uid(), label: 'New item', ca: 0, tb: 0 };
+  if (section === 'asset') state.dtAsset.push(row);
+  else state.dtLiab.push(row);
+  renderDtAsset(); renderDtLiab(); computeAll();
+}
+function delDt(section, id) {
+  if (section === 'asset') state.dtAsset = state.dtAsset.filter(r => r.id !== id);
+  else state.dtLiab = state.dtLiab.filter(r => r.id !== id);
+  renderDtAsset(); renderDtLiab(); computeAll();
+}
+
+function updateDtOther(id, field, val) {
+  const row = state.dtOther.find(r => r.id === id);
+  if (row) row[field] = field === 'label' ? val : field === 'type' ? val : +val;
+}
+function addDtOther() {
+  state.dtOther.push({ id: uid(), label: 'New item', amt: 0, type: 'dta' });
+  renderDtOther(); computeAll();
+}
+function delDtOther(id) {
+  state.dtOther = state.dtOther.filter(r => r.id !== id);
+  renderDtOther(); computeAll();
+}
+
+// ══════════════════════════════════════
+// COMPUTE
+// ══════════════════════════════════════
+function computeAll() {
+  const rate = +document.getElementById('ci-rate').value / 100 || 0.25168;
+  const obDTA = +document.getElementById('ob-dta').value || 0;
+  const obDTL = +document.getElementById('ob-dtl').value || 0;
+  const obMAT = +document.getElementById('ob-mat').value || 0;
+  const matUtil = +document.getElementById('ct-matutil').value || 0;
+  const tds = +document.getElementById('ct-tds').value || 0;
+  const matNew = +document.getElementById('mv-mat-new').value || 0;
+
+  // ── CURRENT TAX ──
+  let bookProfit = 0;
+  let taxableIncome = 0;
+  state.ctRows.forEach(r => {
+    if (r.type === 'book') { bookProfit = r.amt; taxableIncome = r.amt; }
+    else if (r.type === 'add') taxableIncome += r.amt;
+    else if (r.type === 'less') taxableIncome -= r.amt;
+  });
+  const currentTax = Math.max(0, taxableIncome * rate);
+  const netCurrentTax = Math.max(0, currentTax - matUtil - tds);
+
+  setEl('ct-taxable', fmt(taxableIncome));
+  setEl('ct2-ti', fmt(taxableIncome));
+  setEl('ct2-rate', (rate * 100).toFixed(3) + '%');
+  setEl('ct2-tax', fmt(currentTax));
+  setEl('ct2-net', fmt(netCurrentTax));
+
+  // ── DEFERRED TAX ──
+  let totalDTA = 0;
+  let totalDTL = 0;
+
+  // Assets: CA > TB → DTL; CA < TB → DTA
+  let assetDiff = 0, assetTax = 0;
+  state.dtAsset.forEach(r => {
+    const diff = (r.ca || 0) - (r.tb || 0);
+    assetDiff += diff;
+    if (diff > 0) totalDTL += diff * rate;
+    else if (diff < 0) totalDTA += Math.abs(diff) * rate;
+    assetTax += Math.abs(diff) * rate;
+  });
+  setEl('dt-asset-diff', fmt(assetDiff));
+  setEl('dt-asset-tax', fmt(assetTax));
+
+  // Liabilities: CA > TB → DTA; CA < TB → DTL
+  let liabDiff = 0, liabTax = 0;
+  state.dtLiab.forEach(r => {
+    const diff = (r.ca || 0) - (r.tb || 0);
+    liabDiff += diff;
+    if (diff > 0) totalDTA += diff * rate;
+    else if (diff < 0) totalDTL += Math.abs(diff) * rate;
+    liabTax += Math.abs(diff) * rate;
+  });
+  setEl('dt-liab-diff', fmt(liabDiff));
+  setEl('dt-liab-tax', fmt(liabTax));
+
+  // Other
+  let otherTax = 0;
+  state.dtOther.forEach(r => {
+    const te = (r.amt || 0) * rate;
+    if (r.type === 'dta') totalDTA += te;
+    else totalDTL += te;
+    otherTax += te;
+  });
+  setEl('dt-other-tax', fmt(otherTax));
+
+  const netDeferred = totalDTA - totalDTL; // positive = net DTA (credit to P&L), negative = net DTL (charge to P&L)
+  const deferredCharge = -netDeferred; // charge to P&L
+
+  // ── MOVEMENT ──
+  // DTA movement
+  const closingDTA = obDTA + totalDTA + matNew - matUtil;
+  const closingDTL = obDTL + totalDTL;
+
+  setEl('mv-dta-open', fmt(obDTA));
+  setEl('mv-dta-add', fmt(totalDTA));
+  setEl('mv-dta-less', '—');
+  setEl('mv-mat-used', fmt(matUtil));
+  setEl('mv-dta-close', fmt(closingDTA));
+  setEl('mv-dtl-open', fmt(obDTL));
+  setEl('mv-dtl-add', fmt(totalDTL));
+  setEl('mv-dtl-less', '—');
+  setEl('mv-dtl-close', fmt(closingDTL));
+
+  // ── SUMMARY ──
+  const totalTaxExpense = currentTax + deferredCharge;
+  const etr = bookProfit ? (totalTaxExpense / bookProfit * 100) : 0;
+
+  setEl('sum-ct', '₹' + fmt(currentTax));
+  setEl('sum-dt', '₹' + fmt(Math.abs(deferredCharge)));
+  setEl('sum-dt-sub', deferredCharge >= 0 ? 'charge to P&L' : 'credit to P&L');
+  const dtBox = document.getElementById('sum-dt-box');
+  dtBox.className = 'summary-box ' + (deferredCharge >= 0 ? 'red' : 'green');
+  setEl('sum-total', '₹' + fmt(totalTaxExpense));
+  setEl('sum-etr', etr.toFixed(2) + '%');
+  setEl('sum-statutory', (rate * 100).toFixed(3) + '%');
+
+  // ── JOURNAL ENTRIES ──
+  const clientName = document.getElementById('ci-name').value || 'the Company';
+  const fy = document.getElementById('ci-fy').value || 'FY ____';
+
+  document.getElementById('je-current').innerHTML = `
+    <div class="je-head">JOURNAL ENTRY — CURRENT TAX (${fy})</div>
+    <div class="dr">Dr &nbsp; Income Tax Expense (Current) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="amt">₹${fmt(currentTax)}</span></div>
+    <div class="cr">Cr &nbsp; Current Tax Payable &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="amt">₹${fmt(netCurrentTax)}</span></div>
+    <div class="cr">Cr &nbsp; Advance Tax / TDS Receivable &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="amt">₹${fmt(tds)}</span></div>
+    <div class="narr">(Being current tax provision for ${fy} @ ${(rate*100).toFixed(3)}% on taxable income of ₹${fmt(taxableIncome)})</div>
+  `;
+
+  const dtDr = deferredCharge >= 0 ? 'Deferred Tax Expense' : 'Deferred Tax Asset';
+  const dtCr = deferredCharge >= 0 ? 'Deferred Tax Liability' : 'Deferred Tax Income';
+  document.getElementById('je-deferred').innerHTML = `
+    <div class="je-head">JOURNAL ENTRY — DEFERRED TAX (${fy})</div>
+    <div class="dr">Dr &nbsp; ${deferredCharge >= 0 ? 'Deferred Tax Expense' : 'Deferred Tax Asset'} &nbsp;&nbsp;&nbsp;&nbsp;<span class="amt">₹${fmt(Math.abs(deferredCharge))}</span></div>
+    <div class="cr">Cr &nbsp; ${deferredCharge >= 0 ? 'Deferred Tax Liability' : 'Deferred Tax Income (P&L)'} &nbsp;&nbsp;<span class="amt">₹${fmt(Math.abs(deferredCharge))}</span></div>
+    <div class="narr">(Being deferred tax ${deferredCharge >= 0 ? 'charge' : 'credit'} for ${fy} per Ind AS 12 — balance sheet approach. Net DTA: ₹${fmt(totalDTA)}, Net DTL: ₹${fmt(totalDTL)})</div>
+  `;
+
+  // ── DISCLOSURE NOTE ──
+  document.getElementById('disclosure-note').innerHTML = `
+    <strong>Note: Income Taxes</strong><br><br>
+    The income tax expense recognised in the Statement of Profit and Loss comprises:<br><br>
+    <table class="wp-table" style="margin-bottom:12px">
+      <thead><tr><th>Particulars</th><th class="num">₹</th></tr></thead>
+      <tbody>
+        <tr><td>Current tax on profits for the year</td><td class="num">${fmt(currentTax)}</td></tr>
+        <tr><td>Deferred tax charge / (credit)</td><td class="num">${fmt(deferredCharge)}</td></tr>
+      </tbody>
+      <tfoot><tr class="total"><td>Total income tax expense</td><td class="num">${fmt(totalTaxExpense)}</td></tr></tfoot>
+    </table>
+    The Company has computed deferred tax in accordance with <strong>Ind AS 12 — Income Taxes</strong> using the balance sheet approach.
+    Deferred tax assets and liabilities are measured at the tax rates expected to apply in the year in which the asset is realised or the liability is settled, based on tax rates and laws enacted or substantively enacted as at the balance sheet date.<br><br>
+    <strong>Statutory tax rate:</strong> ${(rate*100).toFixed(3)}% (including surcharge and health & education cess)<br>
+    <strong>Effective tax rate:</strong> ${etr.toFixed(2)}%<br><br>
+    <strong>Deferred tax balance (closing):</strong> Net DTA ₹${fmt(closingDTA)} / Net DTL ₹${fmt(closingDTL)}
+  `;
+
+  // ── CHECKLIST ──
+  const checks = [
+    ['Temporary differences identified for all balance sheet items', totalDTA + totalDTL > 0],
+    ['Tax base correctly determined per Income Tax Act', true],
+    ['Deferred tax rate = enacted/substantively enacted rate as at year end', true],
+    ['DTA recognised only if probable future taxable profits available', true],
+    ['Unabsorbed depreciation / losses — virtual certainty test applied', true],
+    ['Opening balances reconciled to prior year financial statements', obDTA >= 0 && obDTL >= 0],
+    ['MAT credit entitlement recognised separately (Ind AS 12)', obMAT >= 0],
+    ['Current tax computed on taxable income (not book profit unless MAT)', taxableIncome !== 0],
+    ['Effective tax rate reconciliation prepared', bookProfit !== 0],
+    ['Deferred tax disclosed separately in notes to accounts', true],
+  ];
+
+  const cb = document.getElementById('checklist-body');
+  cb.innerHTML = checks.map(([label, ok]) => `
+    <tr>
+      <td>${label}</td>
+      <td style="text-align:center">
+        <span class="${ok ? 'pill-green' : 'pill-red'}">${ok ? '✓ Done' : '⚠ Review'}</span>
+      </td>
+    </tr>
+  `).join('');
+
+  // re-render tables to reflect rate changes
+  renderDtAsset();
+  renderDtLiab();
+  renderDtOther();
+}
+
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(n));
+}
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+document.getElementById('ci-prepdate').value = new Date().toISOString().split('T')[0];
+initDefaults();
+computeAll();
+</script>
+</body>
+</html>
