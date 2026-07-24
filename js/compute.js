@@ -12,11 +12,11 @@ const Compute = (() => {
 
   /* ── FORMATTING ── */
   function fmt(n, dec=0){
-    if(n===null||n===undefined||isNaN(n)) return '—';
+    if(n===null||n===undefined||isNaN(n)) return '-';
     return new Intl.NumberFormat('en-IN',{maximumFractionDigits:dec,minimumFractionDigits:dec}).format(Math.round(n*Math.pow(10,dec))/Math.pow(10,dec));
   }
-  function fmtSign(n){ if(!n||isNaN(n))return '—'; return (n<0?'(':'')+fmt(Math.abs(n))+(n<0?')':''); }
-  function fmtPct(n){ if(isNaN(n)||!isFinite(n))return '—'; return n.toFixed(2)+'%'; }
+  function fmtSign(n){ if(!n||isNaN(n))return '-'; return (n<0?'(':'')+fmt(Math.abs(n))+(n<0?')':''); }
+  function fmtPct(n){ if(isNaN(n)||!isFinite(n))return '-'; return n.toFixed(2)+'%'; }
   function fmtINR(n){ return '₹'+fmt(n); }
 
   /* ══════════════════════════════════════

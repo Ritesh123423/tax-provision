@@ -82,7 +82,7 @@ const UI = (() => {
     });
     ['ci-name','ci-fy'].forEach(id=>{ const e=$(id); if(e) e.addEventListener('input',updateClient); });
     document.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') compute(); });
-    toast('Workpaper loaded with sample data — edit values and click Compute','info',5000);
+    toast('Workpaper ready - enter your data and click Compute','info',4000);
   }
 
   return { nav, toast, compute, print_, reset, updateClient, init };

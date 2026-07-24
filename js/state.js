@@ -9,53 +9,17 @@ const State = (() => {
   const data = { ctRows:[], dtAsset:[], dtLiab:[], dtOther:[] };
 
   /* ══════════════════════════════════════
-     DUMMY DATA — Realistic client scenario
-     Client: Pinnacle Manufacturing Pvt Ltd
-     FY 2024-25 | Ind AS 12
+     INITIALIZE WITH EMPTY DATA
+     Client can start fresh
   ══════════════════════════════════════ */
   function initDefaults(){
     data.ctRows=[
-      {id:uid(),label:'Net Profit as per Statement of Profit & Loss (before tax)',amt:85000000,type:'book',locked:true},
-      {id:uid(),label:'Add: Depreciation as per Companies Act 2013 / Ind AS 16 (added back)',amt:12500000,type:'add'},
-      {id:uid(),label:'Less: Depreciation allowable u/s 32 of Income Tax Act, 1961 (WDV method)',amt:18200000,type:'less'},
-      {id:uid(),label:'Add: Provision for Gratuity — disallowed u/s 40A(7) (allowed on actual payment)',amt:3800000,type:'add'},
-      {id:uid(),label:'Add: Provision for Leave Encashment — disallowed u/s 43B',amt:1200000,type:'add'},
-      {id:uid(),label:'Add: Provision for Bonus / Ex-gratia — disallowed u/s 43B (not paid before due date)',amt:2500000,type:'add'},
-      {id:uid(),label:'Add: Provision for Expected Credit Loss / Doubtful Debts — disallowed',amt:4200000,type:'add'},
-      {id:uid(),label:'Add: Expenditure disallowed u/s 40(a)(ia) — TDS default on vendor payments',amt:850000,type:'add'},
-      {id:uid(),label:'Add: Penalty and fines paid during the year',amt:120000,type:'add'},
-      {id:uid(),label:'Add: Prior year expense claimed in current year (timing difference)',amt:680000,type:'add'},
-      {id:uid(),label:'Less: 43B items actually paid before due date of filing ITR',amt:1800000,type:'less'},
-      {id:uid(),label:'Less: Exempt income — Dividend from domestic company u/s 10(34)',amt:500000,type:'less'},
-      {id:uid(),label:'Less: Deduction u/s 80JJAA — additional deduction on new employees',amt:1500000,type:'less'},
-      {id:uid(),label:'Less: Deduction u/s 80G — donations to approved institutions',amt:300000,type:'less'},
-      {id:uid(),label:'Add/(Less): Other adjustments — FVTPL mark-to-market (not taxable)',amt:650000,type:'add'},
+      {id:uid(),label:'Net Profit as per Statement of Profit & Loss (before tax)',amt:0,type:'book',locked:true},
     ];
 
-    data.dtAsset=[
-      {id:uid(),label:'Property, Plant & Equipment — Net Block (Ind AS 16)',ca:125000000,tb:108000000,note:'CA = WDV per Sch II / Ind AS; TB = WDV per IT Act Sec 32 / Sch II'},
-      {id:uid(),label:'Capital Work-in-Progress (CWIP)',ca:18500000,tb:0,note:'TB = 0 — no depreciation allowed till asset put to use u/s 32'},
-      {id:uid(),label:'Intangible Assets — Software & Licences (Ind AS 38)',ca:3200000,tb:2100000,note:'CA = amortised cost; TB = amortisation as per IT Act'},
-      {id:uid(),label:'Right-of-Use Assets — Office Lease (Ind AS 116)',ca:8400000,tb:0,note:'TB = 0 — no ROU asset for tax; lease payments deducted on payment basis'},
-      {id:uid(),label:'Financial Instruments at FVTPL — Mutual Fund Units',ca:12500000,tb:11850000,note:'TB = cost; CA = fair value. Unrealised gain = taxable TD → DTL'},
-      {id:uid(),label:'Prepaid Expenses — deferred in books but allowed in tax',ca:450000,tb:0,note:''},
-    ];
-
-    data.dtLiab=[
-      {id:uid(),label:'Provision for Gratuity — Defined Benefit Obligation (Ind AS 19)',ca:14200000,tb:0,note:'TB = 0 — allowed only on actual payment u/s 43B / 40A(7)'},
-      {id:uid(),label:'Provision for Leave Encashment (compensated absences)',ca:4800000,tb:0,note:'TB = 0 — allowed on payment basis u/s 43B'},
-      {id:uid(),label:'Provision for Bonus / Performance Pay (43B item)',ca:2500000,tb:0,note:'TB = 0 — not paid before due date of ITR filing'},
-      {id:uid(),label:'Provision for Expected Credit Loss — ECL (Ind AS 109)',ca:9800000,tb:0,note:'TB = 0 — allowed only on actual write-off / NPA under IT Act'},
-      {id:uid(),label:'Lease Liability — Office Lease (Ind AS 116)',ca:9100000,tb:0,note:'TB = 0 — off-balance-sheet for tax; rent deducted on payment'},
-      {id:uid(),label:'Contract Liabilities / Advance from Customers',ca:3200000,tb:3200000,note:'TB = CA — advance taxed in year of receipt; no difference'},
-      {id:uid(),label:'Deferred Revenue — Warranty Provision',ca:1800000,tb:0,note:'TB = 0 — not deductible until actual warranty claim settled'},
-    ];
-
-    data.dtOther=[
-      {id:uid(),label:'Unabsorbed Depreciation carried forward u/s 32(2) of ITA',amt:5000000,type:'dta',note:'Recognise only if virtually certain — management has assessed basis of future taxable profits'},
-      {id:uid(),label:'Business Loss carried forward u/s 72 (available for 8 years)',amt:0,type:'dta',note:'Nil for current year — no losses; update if applicable'},
-      {id:uid(),label:'MAT Credit Entitlement u/s 115JAA — opening balance utilised',amt:0,type:'dta',note:'Carry-forward period: 15 years from year of payment of MAT'},
-    ];
+    data.dtAsset=[];
+    data.dtLiab=[];
+    data.dtOther=[];
 
     renderAll();
   }
@@ -102,7 +66,7 @@ const State = (() => {
     data.dtAsset.forEach((row,i)=>{
       const ca=parseFloat(row.ca)||0, tb=parseFloat(row.tb)||0;
       const diff=ca-tb, te=Math.abs(diff)*rate;
-      const nature=diff>0?'DTL':diff<0?'DTA':'—';
+      const nature=diff>0?'DTL':diff<0?'DTA':'-';
       const pc=diff>0?'pill-dtl':diff<0?'pill-dta':'pill-gray';
       const valCol=diff>0?'color:var(--red)':diff<0?'color:var(--green)':'';
       const tr=document.createElement('tr');
@@ -112,9 +76,9 @@ const State = (() => {
           ${row.note?`<div style="font-size:10.5px;color:var(--ink-5);padding-left:4px;margin-top:2px">${row.note}</div>`:''}</div></td>
         <td style="width:150px"><input class="ti r" type="number" value="${row.ca||''}" placeholder="0" oninput="State.updDT('asset','${row.id}','ca',this.value);State.go()" style="width:100%"/></td>
         <td style="width:150px"><input class="ti r" type="number" value="${row.tb||''}" placeholder="0" oninput="State.updDT('asset','${row.id}','tb',this.value);State.go()" style="width:100%"/></td>
-        <td class="r" style="width:130px;font-weight:600;${valCol}">${diff!==0?Compute.fmtSign(diff):'—'}</td>
+        <td class="r" style="width:130px;font-weight:600;${valCol}">${diff!==0?Compute.fmtSign(diff):'-'}</td>
         <td class="c" style="width:75px"><span class="pill ${pc}">${nature}</span></td>
-        <td class="r" style="width:130px;font-weight:600">${diff!==0?'₹'+Compute.fmt(te):'—'}</td>
+        <td class="r" style="width:130px;font-weight:600">${diff!==0?'₹'+Compute.fmt(te):'-'}</td>
         <td style="width:32px;text-align:center"><button class="del-btn" onclick="State.delDT('asset','${row.id}')">×</button></td>`;
       tbody.appendChild(tr);
     });
@@ -128,7 +92,7 @@ const State = (() => {
     data.dtLiab.forEach((row,i)=>{
       const ca=parseFloat(row.ca)||0, tb=parseFloat(row.tb)||0;
       const diff=ca-tb, te=Math.abs(diff)*rate;
-      const nature=diff>0?'DTA':diff<0?'DTL':'—';
+      const nature=diff>0?'DTA':diff<0?'DTL':'-';
       const pc=diff>0?'pill-dta':diff<0?'pill-dtl':'pill-gray';
       const valCol=diff>0?'color:var(--green)':diff<0?'color:var(--red)':'';
       const tr=document.createElement('tr');
@@ -138,9 +102,9 @@ const State = (() => {
           ${row.note?`<div style="font-size:10.5px;color:var(--ink-5);padding-left:4px;margin-top:2px">${row.note}</div>`:''}</div></td>
         <td style="width:150px"><input class="ti r" type="number" value="${row.ca||''}" placeholder="0" oninput="State.updDT('liab','${row.id}','ca',this.value);State.go()" style="width:100%"/></td>
         <td style="width:150px"><input class="ti r" type="number" value="${row.tb||''}" placeholder="0" oninput="State.updDT('liab','${row.id}','tb',this.value);State.go()" style="width:100%"/></td>
-        <td class="r" style="width:130px;font-weight:600;${valCol}">${diff!==0?Compute.fmtSign(diff):'—'}</td>
+        <td class="r" style="width:130px;font-weight:600;${valCol}">${diff!==0?Compute.fmtSign(diff):'-'}</td>
         <td class="c" style="width:75px"><span class="pill ${pc}">${nature}</span></td>
-        <td class="r" style="width:130px;font-weight:600">${diff!==0?'₹'+Compute.fmt(te):'—'}</td>
+        <td class="r" style="width:130px;font-weight:600">${diff!==0?'₹'+Compute.fmt(te):'-'}</td>
         <td style="width:32px;text-align:center"><button class="del-btn" onclick="State.delDT('liab','${row.id}')">×</button></td>`;
       tbody.appendChild(tr);
     });
@@ -165,7 +129,7 @@ const State = (() => {
             <option value="dtl" ${row.type==='dtl'?'selected':''}>DTL</option>
           </select>
         </td>
-        <td class="r" style="width:140px;font-weight:600">${amt?'₹'+Compute.fmt(te):'—'}</td>
+        <td class="r" style="width:140px;font-weight:600">${amt?'₹'+Compute.fmt(te):'-'}</td>
         <td style="width:32px;text-align:center"><button class="del-btn" onclick="State.delOther('${row.id}')">×</button></td>`;
       tbody.appendChild(tr);
     });
