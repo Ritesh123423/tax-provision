@@ -1,633 +1,340 @@
-/* ═══════════════════════════════════════════════════════════
-   COMPUTE.JS — Tax Provision Computation Engine
-   Ind AS 12 | Balance Sheet Approach | K G Somani & Co LLP
-   ═══════════════════════════════════════════════════════════ */
-
 'use strict';
-
+/* ═══════════════════════════════════════════════════
+   COMPUTE.JS  —  Ind AS 12 Tax Provision Engine
+   K G Somani & Co LLP
+═══════════════════════════════════════════════════ */
 const Compute = (() => {
-
-  /* ────────────────────────────────
-     HELPERS
-  ──────────────────────────────── */
   const $ = id => document.getElementById(id);
-  const val = id => parseFloat($(id)?.value) || 0;
-  const pct = id => val(id) / 100;
+  const v  = id => parseFloat($(id)?.value) || 0;
+  const pct= id => v(id) / 100;
+  const set= (id,t) => { const e=$(id); if(e) e.textContent=t; };
+  const htm= (id,h) => { const e=$(id); if(e) e.innerHTML=h; };
 
-  function setText(id, text) {
-    const el = $(id);
-    if (el) el.textContent = text;
+  /* ── FORMATTING ── */
+  function fmt(n, dec=0){
+    if(n===null||n===undefined||isNaN(n)) return '—';
+    return new Intl.NumberFormat('en-IN',{maximumFractionDigits:dec,minimumFractionDigits:dec}).format(Math.round(n*Math.pow(10,dec))/Math.pow(10,dec));
   }
-  function setHTML(id, html) {
-    const el = $(id);
-    if (el) el.innerHTML = html;
-  }
+  function fmtSign(n){ if(!n||isNaN(n))return '—'; return (n<0?'(':'')+fmt(Math.abs(n))+(n<0?')':''); }
+  function fmtPct(n){ if(isNaN(n)||!isFinite(n))return '—'; return n.toFixed(2)+'%'; }
+  function fmtINR(n){ return '₹'+fmt(n); }
 
-  /* ────────────────────────────────
-     NUMBER FORMATTING (Indian)
-  ──────────────────────────────── */
-  function fmt(n, decimals = 0) {
-    if (n === null || n === undefined || isNaN(n)) return '—';
-    return new Intl.NumberFormat('en-IN', {
-      maximumFractionDigits: decimals,
-      minimumFractionDigits: decimals
-    }).format(Math.round(n * Math.pow(10, decimals)) / Math.pow(10, decimals));
-  }
-
-  function fmtSign(n) {
-    if (!n || isNaN(n)) return '—';
-    return (n < 0 ? '(' : '') + fmt(Math.abs(n)) + (n < 0 ? ')' : '');
-  }
-
-  function fmtPct(n) {
-    if (isNaN(n) || !isFinite(n)) return '—';
-    return n.toFixed(2) + '%';
-  }
-
-  /* ────────────────────────────────
-     CURRENT TAX COMPUTATION
-  ──────────────────────────────── */
-  function computeCurrentTax(state) {
-    const rate = pct('ci-rate');
+  /* ══════════════════════════════════════
+     CURRENT TAX
+  ══════════════════════════════════════ */
+  function computeCT(state){
+    const rate    = pct('ci-rate');
     const matRate = pct('ci-mat');
-    const regime = $('ci-regime')?.value || 'new';
+    const regime  = $('ci-regime')?.value||'new';
+    let bookProfit=0, taxableIncome=0;
 
-    let bookProfit = 0;
-    let taxableIncome = 0;
-
-    // Process each row
-    state.ctRows.forEach(row => {
-      const amt = parseFloat(row.amt) || 0;
-      if (row.type === 'book') {
-        bookProfit = amt;
-        taxableIncome = amt;
-      } else if (row.type === 'add') {
-        taxableIncome += amt;
-      } else if (row.type === 'less') {
-        taxableIncome -= amt;
-      }
+    state.ctRows.forEach(r=>{
+      const a = parseFloat(r.amt)||0;
+      if(r.type==='book'){ bookProfit=a; taxableIncome=a; }
+      else if(r.type==='add')  taxableIncome+=a;
+      else if(r.type==='less') taxableIncome-=a;
     });
 
-    // Tax calculation
-    const isMAT = regime === 'mat';
-    const effectiveRate = isMAT ? matRate : rate;
+    const isMAT   = regime==='mat';
+    const effRate = isMAT ? matRate : rate;
     const taxBase = isMAT ? bookProfit : Math.max(0, taxableIncome);
-    const grossTax = taxBase * effectiveRate;
+    const grossTax= taxBase * effRate;
+    const tds     = v('ct-tds');
+    const matUtil = v('ct-matutil');
+    const netCT   = Math.max(0, grossTax - tds - matUtil);
 
-    // TDS / advance tax
-    const tds = val('ct-tds');
-    const matUtil = val('ct-matutil');
-    const netCurrentTax = Math.max(0, grossTax - tds - matUtil);
+    /* update CT section display */
+    set('ct-taxable-disp', fmtINR(taxableIncome));
+    set('ct2-ti',   fmt(taxableIncome));
+    set('ct2-rate', (effRate*100).toFixed(3)+'%');
+    set('ct2-tax',  fmtINR(grossTax));
+    set('ct2-net',  fmtINR(netCT));
 
-    return {
-      bookProfit,
-      taxableIncome,
-      grossTax,
-      tds,
-      matUtil,
-      netCurrentTax,
-      effectiveRate,
-      isMAT
-    };
+    return { bookProfit, taxableIncome, grossTax, tds, matUtil, netCT, effRate, isMAT };
   }
 
-  /* ────────────────────────────────
-     DEFERRED TAX COMPUTATION
-  ──────────────────────────────── */
-  function computeDeferredTax(state) {
+  /* ══════════════════════════════════════
+     DEFERRED TAX  (Ind AS 12 — Balance Sheet)
+  ══════════════════════════════════════ */
+  function computeDT(state){
     const rate = pct('ci-rate');
-    let totalDTA = 0;
-    let totalDTL = 0;
-    const assetDetails = [];
-    const liabDetails = [];
-    const otherDetails = [];
+    let grossDTA=0, grossDTL=0;
+    const assetRows=[], liabRows=[], otherRows=[];
 
-    // ── ASSETS (Ind AS 12 para 16-17)
-    // For assets: Temp diff = Carrying Amount - Tax Base
-    // If CA > Tax Base → future taxable amount → DTL
-    // If CA < Tax Base → future deductible amount → DTA
-    state.dtAsset.forEach(row => {
-      const ca = parseFloat(row.ca) || 0;
-      const tb = parseFloat(row.tb) || 0;
-      const diff = ca - tb;
-      const taxEffect = Math.abs(diff) * rate;
-      let dtaAmt = 0, dtlAmt = 0, nature = '';
-
-      if (diff > 0) {
-        // CA > Tax Base → Taxable Temporary Difference → DTL
-        dtlAmt = taxEffect;
-        totalDTL += taxEffect;
-        nature = 'DTL';
-      } else if (diff < 0) {
-        // CA < Tax Base → Deductible Temporary Difference → DTA
-        dtaAmt = taxEffect;
-        totalDTA += taxEffect;
-        nature = 'DTA';
-      }
-
-      assetDetails.push({ ...row, diff, taxEffect, dtaAmt, dtlAmt, nature });
+    /* ASSETS: CA > TB → Taxable TD → DTL  |  CA < TB → Deductible TD → DTA */
+    state.dtAsset.forEach(r=>{
+      const ca=parseFloat(r.ca)||0, tb=parseFloat(r.tb)||0;
+      const diff=ca-tb, te=Math.abs(diff)*rate;
+      const nature = diff>0?'DTL':diff<0?'DTA':'';
+      if(diff>0) grossDTL+=te; else if(diff<0) grossDTA+=te;
+      assetRows.push({...r,diff,te,nature,dtaAmt:diff<0?te:0,dtlAmt:diff>0?te:0});
     });
 
-    // ── LIABILITIES (Ind AS 12 para 15)
-    // For liabilities: Temp diff = Carrying Amount - Tax Base
-    // If CA > Tax Base → more liability recognised in books than tax → DTA (future deductible)
-    // If CA < Tax Base → DTL
-    state.dtLiab.forEach(row => {
-      const ca = parseFloat(row.ca) || 0;
-      const tb = parseFloat(row.tb) || 0;
-      const diff = ca - tb;
-      const taxEffect = Math.abs(diff) * rate;
-      let dtaAmt = 0, dtlAmt = 0, nature = '';
-
-      if (diff > 0) {
-        // Liability CA > Tax Base → Deductible TD → DTA
-        dtaAmt = taxEffect;
-        totalDTA += taxEffect;
-        nature = 'DTA';
-      } else if (diff < 0) {
-        // Liability CA < Tax Base → Taxable TD → DTL
-        dtlAmt = taxEffect;
-        totalDTL += taxEffect;
-        nature = 'DTL';
-      }
-
-      liabDetails.push({ ...row, diff, taxEffect, dtaAmt, dtlAmt, nature });
+    /* LIABILITIES: CA > TB → Deductible TD → DTA  |  CA < TB → Taxable TD → DTL */
+    state.dtLiab.forEach(r=>{
+      const ca=parseFloat(r.ca)||0, tb=parseFloat(r.tb)||0;
+      const diff=ca-tb, te=Math.abs(diff)*rate;
+      const nature = diff>0?'DTA':diff<0?'DTL':'';
+      if(diff>0) grossDTA+=te; else if(diff<0) grossDTL+=te;
+      liabRows.push({...r,diff,te,nature,dtaAmt:diff>0?te:0,dtlAmt:diff<0?te:0});
     });
 
-    // ── OTHER ITEMS (losses, MAT credit etc.)
-    state.dtOther.forEach(row => {
-      const amt = parseFloat(row.amt) || 0;
-      const taxEffect = amt * rate;
-      let dtaAmt = 0, dtlAmt = 0;
-
-      if (row.type === 'dta') {
-        dtaAmt = taxEffect;
-        totalDTA += taxEffect;
-      } else {
-        dtlAmt = taxEffect;
-        totalDTL += taxEffect;
-      }
-
-      otherDetails.push({ ...row, taxEffect, dtaAmt, dtlAmt });
+    /* OTHER (losses, MAT credit etc.) */
+    state.dtOther.forEach(r=>{
+      const amt=parseFloat(r.amt)||0, te=amt*rate;
+      if(r.type==='dta') grossDTA+=te; else grossDTL+=te;
+      otherRows.push({...r,te,dtaAmt:r.type==='dta'?te:0,dtlAmt:r.type==='dtl'?te:0});
     });
 
-    // ── MAT CREDIT (recognised separately per Ind AS 12)
-    const matCreditNew = val('mv-mat-new');
-    const matCreditUtil = val('ct-matutil');
-    const obDTA = val('ob-dta');
-    const obDTL = val('ob-dtl');
-    const obMAT = val('ob-mat');
-
-    // Closing balances
-    // Net DTA/DTL for balance sheet
-    const netDTA = totalDTA;
-    const netDTL = totalDTL;
-
-    // P&L charge/credit = change in net deferred position
-    // Opening net = obDTA - obDTL
-    // Closing net = netDTA - netDTL
-    // Change (DTA perspective) = closing - opening = P&L credit if positive, charge if negative
+    /* P&L movement */
+    const obDTA=v('ob-dta'), obDTL=v('ob-dtl');
     const openingNet = obDTA - obDTL;
-    const closingNet = netDTA - netDTL;
-    const deferredPLCredit = closingNet - openingNet; // positive = credit to P&L
-    const deferredPLCharge = -deferredPLCredit;       // positive = charge to P&L
+    const closingNet = grossDTA - grossDTL;
+    const dtPLCharge = -(closingNet - openingNet); // +ve = charge, -ve = credit
 
-    // Closing balances for balance sheet
-    const closingDTA = obDTA + (netDTA - obDTA) + matCreditNew; // simplified
-    const closingDTL = obDTL + (netDTL - obDTL);
-    const closingMAT = obMAT + matCreditNew - matCreditUtil;
+    /* Closing BS balances */
+    const matNew   = v('mv-mat-new');
+    const closingDTA = grossDTA + matNew;
+    const closingDTL = grossDTL;
+    const closingMAT = v('ob-mat') + matNew - v('ct-matutil');
 
-    return {
-      totalDTA,
-      totalDTL,
-      netDTA,
-      netDTL,
-      deferredPLCharge,
-      deferredPLCredit,
-      closingDTA,
-      closingDTL,
-      closingMAT,
-      assetDetails,
-      liabDetails,
-      otherDetails,
-      rate
-    };
+    /* update totals display */
+    const aDTA=assetRows.reduce((s,r)=>s+r.dtaAmt,0), aDTL=assetRows.reduce((s,r)=>s+r.dtlAmt,0);
+    const lDTA=liabRows.reduce((s,r)=>s+r.dtaAmt,0),  lDTL=liabRows.reduce((s,r)=>s+r.dtlAmt,0);
+    const oDTA=otherRows.reduce((s,r)=>s+r.dtaAmt,0), oDTL=otherRows.reduce((s,r)=>s+r.dtlAmt,0);
+    set('dt-a-dta',fmtINR(aDTA)); set('dt-a-dtl',fmtINR(aDTL));
+    set('dt-l-dta',fmtINR(lDTA)); set('dt-l-dtl',fmtINR(lDTL));
+    set('dt-o-dta',fmtINR(oDTA)); set('dt-o-dtl',fmtINR(oDTL));
+    set('dt-tot-dta',fmtINR(grossDTA)); set('dt-tot-dtl',fmtINR(grossDTL));
+    set('dt-pl',dtPLCharge>=0?fmtINR(dtPLCharge)+' (Charge)':fmtINR(Math.abs(dtPLCharge))+' (Credit)');
+
+    /* movement schedule */
+    set('mv-dta-open',fmtINR(obDTA)); set('mv-dta-cy',fmtINR(grossDTA));
+    set('mv-dta-close',fmtINR(closingDTA));
+    set('mv-dtl-open',fmtINR(v('ob-dtl'))); set('mv-dtl-cy',fmtINR(grossDTL));
+    set('mv-dtl-close',fmtINR(closingDTL));
+    set('mv-mat-open',fmtINR(v('ob-mat'))); set('mv-mat-new-disp',fmtINR(matNew));
+    set('mv-mat-util-disp',fmtINR(v('ct-matutil'))); set('mv-mat-close',fmtINR(closingMAT));
+
+    return { grossDTA, grossDTL, dtPLCharge, closingDTA, closingDTL, closingMAT,
+             assetRows, liabRows, otherRows };
   }
 
-  /* ────────────────────────────────
-     MASTER COMPUTE & UI UPDATE
-  ──────────────────────────────── */
-  function run(state) {
-    if (!state) return;
+  /* ══════════════════════════════════════
+     MASTER RUN
+  ══════════════════════════════════════ */
+  function run(state){
+    if(!state) return null;
+    const ct = computeCT(state);
+    const dt = computeDT(state);
+    const total   = ct.grossTax + dt.dtPLCharge;
+    const etr     = ct.bookProfit ? (total/ct.bookProfit*100) : 0;
+    const statRate= v('ci-rate');
 
-    const ct = computeCurrentTax(state);
-    const dt = computeDeferredTax(state);
+    /* KPI cards */
+    set('kpi-ct',    fmtINR(ct.grossTax));
+    set('kpi-dt',    (dt.dtPLCharge>=0?'':'(')+fmtINR(Math.abs(dt.dtPLCharge))+(dt.dtPLCharge<0?')':''));
+    set('kpi-total', fmtINR(total));
+    set('kpi-etr',   fmtPct(etr));
+    set('kpi-dta',   fmtINR(dt.closingDTA));
+    set('kpi-dtl',   fmtINR(dt.closingDTL));
+    const dtCard=$('kpi-dt-card');
+    if(dtCard) dtCard.className='kpi '+(dt.dtPLCharge>=0?'red':'green');
+    set('kpi-dt-sub', dt.dtPLCharge>=0?'Charge to P&L':'Credit to P&L');
+    const etrv=$('kpi-etr-var');
+    if(etrv){ const ev=etr-statRate; etrv.textContent=(ev>=0?'+':'')+fmtPct(ev)+' vs statutory '+(statRate.toFixed(3))+'%'; }
 
-    const totalTaxExpense = ct.grossTax + dt.deferredPLCharge;
-    const etr = ct.bookProfit ? (totalTaxExpense / ct.bookProfit * 100) : 0;
-    const statutoryRate = val('ci-rate');
-
-    // ── UPDATE CURRENT TAX UI
-    setText('ct-taxable-display', '₹' + fmt(ct.taxableIncome));
-    setText('ct2-ti', fmt(ct.taxableIncome));
-    setText('ct2-rate', (ct.effectiveRate * 100).toFixed(3) + '%');
-    setText('ct2-tax', '₹' + fmt(ct.grossTax));
-    setText('ct2-tds-display', '₹' + fmt(ct.tds));
-    setText('ct2-matutil-display', '₹' + fmt(ct.matUtil));
-    setText('ct2-net', '₹' + fmt(ct.netCurrentTax));
-
-    // ── UPDATE DEFERRED TAX TOTALS
-    setText('dt-asset-dta', '₹' + fmt(dt.assetDetails.reduce((s,r) => s + r.dtaAmt, 0)));
-    setText('dt-asset-dtl', '₹' + fmt(dt.assetDetails.reduce((s,r) => s + r.dtlAmt, 0)));
-    setText('dt-liab-dta',  '₹' + fmt(dt.liabDetails.reduce((s,r)  => s + r.dtaAmt, 0)));
-    setText('dt-liab-dtl',  '₹' + fmt(dt.liabDetails.reduce((s,r)  => s + r.dtlAmt, 0)));
-    setText('dt-other-dta', '₹' + fmt(dt.otherDetails.reduce((s,r) => s + r.dtaAmt, 0)));
-    setText('dt-other-dtl', '₹' + fmt(dt.otherDetails.reduce((s,r) => s + r.dtlAmt, 0)));
-    setText('dt-total-dta', '₹' + fmt(dt.totalDTA));
-    setText('dt-total-dtl', '₹' + fmt(dt.totalDTL));
-    setText('dt-pl-effect',
-      dt.deferredPLCharge >= 0
-        ? '₹' + fmt(dt.deferredPLCharge) + ' (Charge)'
-        : '₹' + fmt(Math.abs(dt.deferredPLCharge)) + ' (Credit)');
-
-    // ── UPDATE MOVEMENT SCHEDULE
-    setText('mv-dta-open',  '₹' + fmt(val('ob-dta')));
-    setText('mv-dta-cy',    '₹' + fmt(dt.totalDTA));
-    setText('mv-dta-close', '₹' + fmt(dt.closingDTA));
-    setText('mv-dtl-open',  '₹' + fmt(val('ob-dtl')));
-    setText('mv-dtl-cy',    '₹' + fmt(dt.totalDTL));
-    setText('mv-dtl-close', '₹' + fmt(dt.closingDTL));
-    setText('mv-mat-open',  '₹' + fmt(val('ob-mat')));
-    setText('mv-mat-new-display', '₹' + fmt(val('mv-mat-new')));
-    setText('mv-mat-util',  '₹' + fmt(val('ct-matutil')));
-    setText('mv-mat-close', '₹' + fmt(dt.closingMAT));
-
-    // ── KPI CARDS
-    setText('kpi-ct', '₹' + fmt(ct.grossTax));
-    setText('kpi-dt', (dt.deferredPLCharge >= 0 ? '₹' : '(₹') + fmt(Math.abs(dt.deferredPLCharge)) + (dt.deferredPLCharge < 0 ? ')' : ''));
-    setText('kpi-total', '₹' + fmt(totalTaxExpense));
-    setText('kpi-etr', fmtPct(etr));
-    setText('kpi-dta-closing', '₹' + fmt(dt.closingDTA));
-    setText('kpi-dtl-closing', '₹' + fmt(dt.closingDTL));
-
-    const dtCard = $('kpi-dt-card');
-    if (dtCard) {
-      dtCard.className = 'kpi-card ' + (dt.deferredPLCharge >= 0 ? 'red' : 'green');
-    }
-    const dtSub = $('kpi-dt-sub');
-    if (dtSub) dtSub.textContent = dt.deferredPLCharge >= 0 ? 'Charge to P&L' : 'Credit to P&L';
-
-    // ── ETR VARIANCE
-    const etrVariance = etr - statutoryRate;
-    const etrEl = $('etr-variance');
-    if (etrEl) {
-      etrEl.textContent = (etrVariance >= 0 ? '+' : '') + fmtPct(etrVariance) + ' vs statutory';
-      etrEl.className = 'kpi-sub ' + (Math.abs(etrVariance) < 2 ? 'text-green' : 'text-amber');
-    }
-
-    // ── JOURNAL ENTRIES
-    buildJournalEntries(ct, dt, totalTaxExpense);
-
-    // ── DISCLOSURE NOTE
-    buildDisclosureNote(ct, dt, totalTaxExpense, etr, statutoryRate);
-
-    // ── CHECKLIST
-    buildChecklist(ct, dt, totalTaxExpense, etr, state);
-
-    // ── ETR RECONCILIATION
-    buildETRReconciliation(ct, dt, etr, statutoryRate);
-
-    // ── Progress
+    buildJEs(ct, dt);
+    buildDisclosure(ct, dt, total, etr, statRate);
+    buildChecklist(ct, dt, total, etr, state);
+    buildETR(ct, dt, etr, statRate);
     updateProgress(state);
 
-    return { ct, dt, totalTaxExpense, etr };
+    return { ct, dt, total, etr };
   }
 
-  /* ────────────────────────────────
+  /* ══════════════════════════════════════
      JOURNAL ENTRIES
-  ──────────────────────────────── */
-  function buildJournalEntries(ct, dt, total) {
-    const fy = $('ci-fy')?.value || 'FY ____';
-    const client = $('ci-name')?.value || 'the Company';
-    const rate = val('ci-rate');
+  ══════════════════════════════════════ */
+  function buildJEs(ct, dt){
+    const fy   = $('ci-fy')?.value||'FY ____';
+    const dt_  = $('ci-date')?.value ? new Date($('ci-date').value).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : '31st March ____';
+    const rate = v('ci-rate');
 
-    // JE 1 — Current Tax
-    const je1 = $('je-current');
-    if (je1) {
-      je1.innerHTML = `
-        <div class="je-head">JOURNAL ENTRY 1 — CURRENT TAX PROVISION &nbsp;|&nbsp; ${fy}</div>
-        <div class="je-date">Date: ${$('ci-date')?.value || '31st March ____'}</div><br>
-        <div class="je-dr">Dr &nbsp;&nbsp; Income Tax Expense (Current) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(ct.grossTax)}</span></div>
-        <div class="je-cr">Cr &nbsp;&nbsp; Provision for Current Tax &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(ct.netCurrentTax)}</span></div>
-        ${ct.tds > 0 ? `<div class="je-cr">Cr &nbsp;&nbsp; Advance Tax / TDS Receivable &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(ct.tds)}</span></div>` : ''}
-        ${ct.matUtil > 0 ? `<div class="je-cr">Cr &nbsp;&nbsp; MAT Credit Entitlement (utilised) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(ct.matUtil)}</span></div>` : ''}
-        <div class="je-total">
-          Total Dr = ₹${fmt(ct.grossTax)} &nbsp;|&nbsp; Total Cr = ₹${fmt(ct.grossTax)}
-        </div>
-        <div class="je-narr">(Being provision for current income tax for ${fy} @ ${rate.toFixed(3)}% on taxable income of ₹${fmt(ct.taxableIncome)} computed as per the provisions of the Income Tax Act, 1961)</div>
-      `;
-    }
+    htm('je-ct',`
+      <div class="je-hd">JOURNAL ENTRY 1 — CURRENT TAX PROVISION &nbsp;|&nbsp; ${fy}</div>
+      <div class="je-date">Date: ${dt_}</div><br>
+      <div class="je-dr">Dr &nbsp;&nbsp; Income Tax Expense — Current &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(ct.grossTax)}</span></div>
+      ${ct.tds>0?`<div class="je-cr">Cr &nbsp;&nbsp; Advance Tax / TDS Receivable &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(ct.tds)}</span></div>`:''}
+      ${ct.matUtil>0?`<div class="je-cr">Cr &nbsp;&nbsp; MAT Credit Entitlement (utilised) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(ct.matUtil)}</span></div>`:''}
+      <div class="je-cr">Cr &nbsp;&nbsp; Provision for Current Tax &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(ct.netCT)}</span></div>
+      <div class="je-tot">Dr Total = ₹${fmt(ct.grossTax)} &nbsp;|&nbsp; Cr Total = ₹${fmt(ct.grossTax)} &nbsp;✓ Balanced</div>
+      <div class="je-narr">(Being provision for current income tax for ${fy} @ ${rate.toFixed(3)}% on taxable income of ₹${fmt(ct.taxableIncome)} as per Income Tax Act, 1961)</div>
+    `);
 
-    // JE 2 — Deferred Tax
-    const je2 = $('je-deferred');
-    if (je2) {
-      const dtCharge = dt.deferredPLCharge;
-      const isDTACredit = dtCharge < 0;
-      je2.innerHTML = `
-        <div class="je-head">JOURNAL ENTRY 2 — DEFERRED TAX &nbsp;|&nbsp; ${fy} &nbsp;|&nbsp; Ind AS 12</div>
-        <div class="je-date">Date: ${$('ci-date')?.value || '31st March ____'}</div><br>
-        ${isDTACredit
-          ? `<div class="je-dr">Dr &nbsp;&nbsp; Deferred Tax Asset &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(Math.abs(dtCharge))}</span></div>
-             <div class="je-cr">Cr &nbsp;&nbsp; Deferred Tax Income (P&L) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(Math.abs(dtCharge))}</span></div>`
-          : `<div class="je-dr">Dr &nbsp;&nbsp; Deferred Tax Expense (P&L) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(dtCharge)}</span></div>
-             <div class="je-cr">Cr &nbsp;&nbsp; Deferred Tax Liability &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(dtCharge)}</span></div>`
-        }
-        <div class="je-total">
-          Total Dr = ₹${fmt(Math.abs(dtCharge))} &nbsp;|&nbsp; Total Cr = ₹${fmt(Math.abs(dtCharge))}
-        </div>
-        <div class="je-narr">(Being deferred tax ${isDTACredit ? 'credit (DTA recognised)' : 'charge (DTL recognised)'} for ${fy} per Ind AS 12 — Income Taxes, using balance sheet approach. Gross DTA: ₹${fmt(dt.totalDTA)} | Gross DTL: ₹${fmt(dt.totalDTL)})</div>
-      `;
-    }
-
-    // JE 3 — MAT Credit (if applicable)
-    const matNew = val('mv-mat-new');
-    const je3 = $('je-mat');
-    if (je3) {
-      if (matNew > 0) {
-        je3.innerHTML = `
-          <div class="je-head">JOURNAL ENTRY 3 — MAT CREDIT ENTITLEMENT &nbsp;|&nbsp; ${fy} &nbsp;|&nbsp; Sec 115JAA</div>
-          <div class="je-date">Date: ${$('ci-date')?.value || '31st March ____'}</div><br>
-          <div class="je-dr">Dr &nbsp;&nbsp; MAT Credit Entitlement (Deferred Tax Asset) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(matNew)}</span></div>
-          <div class="je-cr">Cr &nbsp;&nbsp; MAT Credit Entitlement (P&L Income) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(matNew)}</span></div>
-          <div class="je-total">Total Dr = ₹${fmt(matNew)} &nbsp;|&nbsp; Total Cr = ₹${fmt(matNew)}</div>
-          <div class="je-narr">(Being MAT credit entitlement recognised u/s 115JAA of the Income Tax Act, 1961, as there is reasonable certainty of future normal tax liability against which MAT credit can be set off)</div>
-        `;
-        je3.parentElement.parentElement.style.display = '';
-      } else {
-        if (je3.parentElement?.parentElement) {
-          je3.parentElement.parentElement.style.display = 'none';
-        }
+    const isDTAcredit = dt.dtPLCharge < 0;
+    htm('je-dt',`
+      <div class="je-hd">JOURNAL ENTRY 2 — DEFERRED TAX &nbsp;|&nbsp; ${fy} &nbsp;|&nbsp; Ind AS 12 — Balance Sheet Approach</div>
+      <div class="je-date">Date: ${dt_}</div><br>
+      ${isDTAcredit
+        ?`<div class="je-dr">Dr &nbsp;&nbsp; Deferred Tax Asset &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(Math.abs(dt.dtPLCharge))}</span></div>
+           <div class="je-cr">Cr &nbsp;&nbsp; Deferred Tax Income (P&amp;L) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(Math.abs(dt.dtPLCharge))}</span></div>`
+        :`<div class="je-dr">Dr &nbsp;&nbsp; Deferred Tax Expense (P&amp;L) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(dt.dtPLCharge)}</span></div>
+           <div class="je-cr">Cr &nbsp;&nbsp; Deferred Tax Liability &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(dt.dtPLCharge)}</span></div>`
       }
+      <div class="je-tot">Dr Total = ₹${fmt(Math.abs(dt.dtPLCharge))} &nbsp;|&nbsp; Cr Total = ₹${fmt(Math.abs(dt.dtPLCharge))} &nbsp;✓ Balanced</div>
+      <div class="je-narr">(Being deferred tax ${isDTAcredit?'credit — DTA recognised':'charge — DTL recognised'} for ${fy} per Ind AS 12. Gross DTA: ₹${fmt(dt.grossDTA)} | Gross DTL: ₹${fmt(dt.grossDTL)})</div>
+    `);
+
+    const matNew=v('mv-mat-new');
+    const matCard=$('je-mat-card');
+    if(matCard) matCard.style.display=matNew>0?'':'none';
+    if(matNew>0){
+      htm('je-mat',`
+        <div class="je-hd">JOURNAL ENTRY 3 — MAT CREDIT ENTITLEMENT &nbsp;|&nbsp; ${fy} &nbsp;|&nbsp; Sec 115JAA</div>
+        <div class="je-date">Date: ${dt_}</div><br>
+        <div class="je-dr">Dr &nbsp;&nbsp; MAT Credit Entitlement (DTA — Non Current) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(matNew)}</span></div>
+        <div class="je-cr">Cr &nbsp;&nbsp; MAT Credit Entitlement (P&amp;L — Tax Income) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="je-amt">₹${fmt(matNew)}</span></div>
+        <div class="je-tot">Dr Total = ₹${fmt(matNew)} &nbsp;|&nbsp; Cr Total = ₹${fmt(matNew)} &nbsp;✓ Balanced</div>
+        <div class="je-narr">(Being MAT credit entitlement recognised u/s 115JAA — carry-forward 15 years. Reasonably certain of future normal tax liability.)</div>
+      `);
     }
   }
 
-  /* ────────────────────────────────
-     DISCLOSURE NOTE (Ind AS 12)
-  ──────────────────────────────── */
-  function buildDisclosureNote(ct, dt, total, etr, statutoryRate) {
-    const dn = $('disclosure-note');
-    if (!dn) return;
-    const fy = $('ci-fy')?.value || 'FY ____';
-    const client = $('ci-name')?.value || 'the Company';
-    const date = $('ci-date')?.value ? new Date($('ci-date').value).toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) : '31st March ____';
-    const rate = val('ci-rate');
+  /* ══════════════════════════════════════
+     DISCLOSURE NOTE  (Ind AS 12.79-88)
+  ══════════════════════════════════════ */
+  function buildDisclosure(ct, dt, total, etr, statRate){
+    const dn=$('disclosure-note'); if(!dn) return;
+    const fy  =$('ci-fy')?.value||'FY ____';
+    const name=$('ci-name')?.value||'the Company';
+    const date=$('ci-date')?.value?new Date($('ci-date').value).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):'31st March ____';
+    const rate=v('ci-rate');
 
-    dn.innerHTML = `
-      <div class="disclosure">
-        <p style="margin-bottom:14px"><strong>Note ___ : Income Taxes</strong><br>
-        Recognised in the Statement of Profit and Loss:</p>
+    dn.innerHTML=`
+    <div class="disc">
+      <p style="margin-bottom:12px"><strong>Note ___ : Income Taxes</strong></p>
+      <p style="margin-bottom:10px">a) Amount recognised in the Statement of Profit and Loss:</p>
+      <table class="disc-tbl">
+        <thead><tr><th>Particulars</th><th class="r">Current Year (₹)</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">Current tax</td><td class="r"></td></tr>
+          <tr><td style="padding-left:20px">Current tax on taxable profits for the year</td><td class="r">${fmt(ct.grossTax)}</td></tr>
+          <tr><td style="padding-left:20px">Adjustments for earlier years</td><td class="r">—</td></tr>
+          <tr style="font-weight:600"><td>Total current tax expense</td><td class="r">${fmt(ct.grossTax)}</td></tr>
+          <tr><td></td><td></td></tr>
+          <tr><td style="font-weight:600">Deferred tax</td><td class="r"></td></tr>
+          <tr><td style="padding-left:20px">Origination and reversal of temporary differences</td><td class="r">${fmtSign(dt.dtPLCharge)}</td></tr>
+          <tr><td style="padding-left:20px">Effect of change in tax rate</td><td class="r">—</td></tr>
+          <tr style="font-weight:600"><td>Total deferred tax expense / (credit)</td><td class="r">${fmtSign(dt.dtPLCharge)}</td></tr>
+        </tbody>
+        <tfoot><tr><td>Income tax expense recognised in P&amp;L</td><td class="r">${fmt(total)}</td></tr></tfoot>
+      </table>
 
-        <table class="disclosure-note-table">
-          <thead>
-            <tr>
-              <th>Particulars</th>
-              <th class="r">Current Year (₹)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td><strong>Current tax</strong></td><td class="r"></td></tr>
-            <tr><td style="padding-left:28px">Current tax on profits for the year</td><td class="r">${fmt(ct.grossTax)}</td></tr>
-            <tr><td style="padding-left:28px">Adjustments for earlier years</td><td class="r">—</td></tr>
-            <tr style="font-weight:600"><td><strong>Total current tax</strong></td><td class="r">${fmt(ct.grossTax)}</td></tr>
-            <tr><td></td><td></td></tr>
-            <tr><td><strong>Deferred tax</strong></td><td class="r"></td></tr>
-            <tr><td style="padding-left:28px">Relating to origination and reversal of temporary differences</td><td class="r">${fmtSign(dt.deferredPLCharge)}</td></tr>
-            <tr style="font-weight:600"><td><strong>Total deferred tax expense / (credit)</strong></td><td class="r">${fmtSign(dt.deferredPLCharge)}</td></tr>
-          </tbody>
-          <tfoot>
-            <tr><td><strong>Income tax expense for the year</strong></td><td class="r">${fmt(total)}</td></tr>
-          </tfoot>
-        </table>
+      <p style="margin:14px 0 8px">b) Reconciliation of effective tax rate:</p>
+      <table class="disc-tbl">
+        <thead><tr><th>Particulars</th><th class="r">%</th><th class="r">₹</th></tr></thead>
+        <tbody>
+          <tr><td>Profit Before Tax (Book Profit)</td><td class="r">100.00%</td><td class="r">${fmt(ct.bookProfit)}</td></tr>
+          <tr><td>Tax at statutory rate of ${rate.toFixed(3)}%</td><td class="r">${rate.toFixed(3)}%</td><td class="r">${fmt(ct.bookProfit*rate/100)}</td></tr>
+          <tr><td style="padding-left:20px;color:var(--ink-3)">Effect of non-deductible expenses</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td style="padding-left:20px;color:var(--ink-3)">Effect of exempt income</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td style="padding-left:20px;color:var(--ink-3)">Effect of deferred tax movement</td><td class="r">${ct.bookProfit?fmtPct(dt.dtPLCharge/ct.bookProfit*100):'—'}</td><td class="r">${fmtSign(dt.dtPLCharge)}</td></tr>
+        </tbody>
+        <tfoot><tr><td><strong>Effective tax rate / Total tax expense</strong></td><td class="r"><strong>${fmtPct(etr)}</strong></td><td class="r"><strong>${fmt(total)}</strong></td></tr></tfoot>
+      </table>
 
-        <p style="margin:14px 0 8px"><strong>Reconciliation of effective tax rate:</strong></p>
-        <table class="disclosure-note-table">
-          <thead>
-            <tr><th>Particulars</th><th class="r">%</th><th class="r">Amount (₹)</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Profit before tax</td><td class="r">—</td><td class="r">${fmt(ct.bookProfit)}</td></tr>
-            <tr><td>Tax at the statutory income tax rate of ${rate.toFixed(3)}%</td><td class="r">${rate.toFixed(3)}%</td><td class="r">${fmt(ct.bookProfit * rate / 100)}</td></tr>
-            <tr><td>Effect of deferred tax adjustments</td><td class="r">—</td><td class="r">${fmtSign(dt.deferredPLCharge)}</td></tr>
-            <tr><td>Other adjustments</td><td class="r">—</td><td class="r">—</td></tr>
-          </tbody>
-          <tfoot>
-            <tr>
-              <td><strong>Effective tax rate / Tax expense</strong></td>
-              <td class="r"><strong>${fmtPct(etr)}</strong></td>
-              <td class="r"><strong>${fmt(total)}</strong></td>
-            </tr>
-          </tfoot>
-        </table>
+      <p style="margin:14px 0 8px">c) Deferred tax recognised in Balance Sheet:</p>
+      <table class="disc-tbl">
+        <thead><tr><th>Particulars</th><th class="r">Closing DTA (₹)</th><th class="r">Closing DTL (₹)</th></tr></thead>
+        <tbody>
+          <tr><td>Property, Plant &amp; Equipment</td><td class="r">${fmt(dt.assetRows.find(r=>r.label?.includes('Plant'))||0)}</td><td class="r">—</td></tr>
+          <tr><td>Employee benefit provisions (Gratuity, Leave etc.)</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td>Other temporary differences</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td>Unabsorbed depreciation / business losses</td><td class="r">—</td><td class="r">—</td></tr>
+        </tbody>
+        <tfoot><tr><td>Net DTA / DTL (to Balance Sheet — Non Current)</td><td class="r">${fmt(dt.closingDTA)}</td><td class="r">${fmt(dt.closingDTL)}</td></tr></tfoot>
+      </table>
 
-        <p style="margin-top:14px"><strong>Deferred tax assets and liabilities</strong> are measured at the tax rate expected to apply when the asset is realised or liability settled, based on tax laws enacted or substantively enacted as at ${date} i.e. ${rate.toFixed(3)}% (Previous year: as applicable).</p>
-
-        <p style="margin-top:10px">The Company has recognised a net Deferred Tax Asset of <strong>₹${fmt(dt.totalDTA)}</strong> and Deferred Tax Liability of <strong>₹${fmt(dt.totalDTL)}</strong> as at ${date}. The net deferred tax position is <strong>₹${fmt(dt.totalDTA - dt.totalDTL)}</strong> (${dt.totalDTA >= dt.totalDTL ? 'net asset' : 'net liability'}).</p>
-
-        ${dt.closingMAT > 0 ? `<p style="margin-top:10px">The Company has recognised MAT credit entitlement of <strong>₹${fmt(dt.closingMAT)}</strong> (including current year addition of ₹${fmt(val('mv-mat-new'))}), which is expected to be utilised within the permitted carry-forward period of 15 years, based on projected taxable profits.</p>` : ''}
-
-        <p style="margin-top:10px;font-size:11.5px;color:var(--ink-4)"><em>The above disclosure is prepared in accordance with Ind AS 12 — Income Taxes read with the Companies (Indian Accounting Standards) Rules, 2015.</em></p>
-      </div>
-    `;
+      <p style="margin-top:14px">Deferred tax assets and liabilities are measured at the tax rates expected to apply in the period when the asset is realised or liability settled, based on tax rates and tax laws enacted or substantively enacted as at <strong>${date}</strong> i.e. <strong>${rate.toFixed(3)}%</strong> (including surcharge and Health & Education Cess).</p>
+      ${dt.closingMAT>0?`<p style="margin-top:10px">The Company has recognised MAT credit entitlement of <strong>₹${fmt(dt.closingMAT)}</strong> (including current year of ₹${fmt(v('mv-mat-new'))}), which is expected to be utilised within 15 years on the basis of projections of future taxable profits, as per the provisions of Section 115JAA of the Income Tax Act, 1961.</p>`:''}
+      <p style="margin-top:10px;font-size:11px;color:var(--ink-4)"><em>Prepared in accordance with Ind AS 12 — Income Taxes, notified under the Companies (Indian Accounting Standards) Rules, 2015, as amended.</em></p>
+    </div>`;
   }
 
-  /* ────────────────────────────────
-     AUDITOR'S CHECKLIST
-  ──────────────────────────────── */
-  function buildChecklist(ct, dt, total, etr, state) {
-    const cl = $('checklist-wrap');
-    if (!cl) return;
-
-    const checks = [
-      {
-        label: 'Current tax computed on taxable income (not book profit, unless MAT u/s 115JB)',
-        ref: 'Sec 115BA/BAA/BAB/JB',
-        ok: ct.taxableIncome !== 0 || ct.bookProfit !== 0,
-        warn: ct.taxableIncome === 0
-      },
-      {
-        label: 'Balance sheet approach applied for deferred tax per Ind AS 12',
-        ref: 'Ind AS 12.15-16',
-        ok: true
-      },
-      {
-        label: 'Temporary differences identified for all balance sheet items',
-        ref: 'Ind AS 12.5',
-        ok: state.dtAsset.length > 0 || state.dtLiab.length > 0,
-        warn: state.dtAsset.length === 0 && state.dtLiab.length === 0
-      },
-      {
-        label: 'Tax base correctly determined per Income Tax Act, 1961',
-        ref: 'Ind AS 12.7',
-        ok: true
-      },
-      {
-        label: 'Deferred tax rate = enacted/substantively enacted rate at balance sheet date',
-        ref: 'Ind AS 12.47',
-        ok: val('ci-rate') > 0
-      },
-      {
-        label: 'DTA recognised only where probable future taxable profits exist',
-        ref: 'Ind AS 12.24-31',
-        ok: dt.totalDTA >= 0
-      },
-      {
-        label: 'Unabsorbed depreciation / carried-forward losses — virtual certainty test applied',
-        ref: 'Ind AS 12.29',
-        ok: true,
-        note: 'Verify virtual certainty if DTA on losses is recognised'
-      },
-      {
-        label: 'Initial recognition exception applied (assets/liabilities not affecting taxable profit at recognition)',
-        ref: 'Ind AS 12.15(b), 24(b)',
-        ok: true
-      },
-      {
-        label: 'Deferred taxes not discounted (presented at undiscounted amounts)',
-        ref: 'Ind AS 12.53',
-        ok: true
-      },
-      {
-        label: 'DTA and DTL offset only where legally enforceable right exists and same taxing authority',
-        ref: 'Ind AS 12.74',
-        ok: true
-      },
-      {
-        label: 'Opening balances reconciled to prior year audited financial statements',
-        ref: 'SA 520',
-        ok: true,
-        warn: val('ob-dta') === 0 && val('ob-dtl') === 0,
-        note: 'Verify opening balances with prior year workpapers'
-      },
-      {
-        label: 'MAT credit entitlement recognised separately as deferred tax asset',
-        ref: 'Ind AS 12 / Sec 115JAA',
-        ok: true
-      },
-      {
-        label: 'Effective tax rate reconciliation prepared and reviewed',
-        ref: 'Ind AS 12.81(c)',
-        ok: ct.bookProfit !== 0
-      },
-      {
-        label: 'Income tax disclosure note prepared as per Ind AS 12.79-88',
-        ref: 'Ind AS 12.79',
-        ok: true
-      },
-      {
-        label: 'Deferred tax classified as non-current in balance sheet',
-        ref: 'Ind AS 1.56',
-        ok: true
-      }
+  /* ══════════════════════════════════════
+     AUDITOR CHECKLIST
+  ══════════════════════════════════════ */
+  function buildChecklist(ct, dt, total, etr, state){
+    const wrap=$('checklist-wrap'); if(!wrap) return;
+    const checks=[
+      {l:'Balance sheet approach applied per Ind AS 12 (not income statement approach)',        ref:'Ind AS 12.15',   ok:true},
+      {l:'Current tax computed on taxable income per Income Tax Act, 1961',                    ref:'Sec 115BAA/JB',  ok:ct.taxableIncome!==0||ct.bookProfit!==0, warn:ct.taxableIncome===0},
+      {l:'Temporary differences identified for ALL balance sheet line items',                  ref:'Ind AS 12.5',    ok:state.dtAsset.length>0&&state.dtLiab.length>0, warn:state.dtAsset.length===0||state.dtLiab.length===0},
+      {l:'Tax base correctly determined per Income Tax Act provisions',                        ref:'Ind AS 12.7',    ok:true},
+      {l:'Deferred tax rate = enacted/substantively enacted rate at balance sheet date',       ref:'Ind AS 12.47',   ok:v('ci-rate')>0},
+      {l:'DTA recognised only where future taxable profits are probable (Ind AS 12.24)',       ref:'Ind AS 12.24',   ok:dt.grossDTA>=0},
+      {l:'Virtual certainty test applied for DTA on unabsorbed losses (Ind AS 12.29)',        ref:'Ind AS 12.29',   ok:true, note:'Verify if DTA on losses is recognised — management assessment documented?'},
+      {l:'Initial recognition exception applied correctly (Ind AS 12.15(b), 24(b))',          ref:'Ind AS 12.15(b)',ok:true},
+      {l:'Deferred taxes NOT discounted — presented at undiscounted nominal amounts',          ref:'Ind AS 12.53',   ok:true},
+      {l:'DTA and DTL offset ONLY where enforceable right exists & same taxing authority',    ref:'Ind AS 12.74',   ok:true},
+      {l:'Opening balances agreed to prior year audited financial statements',                 ref:'SA 520',         ok:v('ob-dta')>=0&&v('ob-dtl')>=0, warn:v('ob-dta')===0&&v('ob-dtl')===0, note:'Confirm with prior year workpapers — zero opening may need explanation'},
+      {l:'MAT credit entitlement recognised separately as deferred tax asset',                ref:'Sec 115JAA',     ok:true},
+      {l:'DTA / DTL classified as NON-CURRENT in Balance Sheet',                             ref:'Ind AS 1.56',    ok:true},
+      {l:'Effective tax rate reconciliation prepared and disclosed',                          ref:'Ind AS 12.81(c)',ok:ct.bookProfit!==0},
+      {l:'Disclosure of temporary differences for each type of item (Ind AS 12.81(g))',       ref:'Ind AS 12.81(g)',ok:state.dtAsset.length>0||state.dtLiab.length>0},
+      {l:'Journal entries balanced — Dr = Cr for both current and deferred tax',              ref:'AS 2 / SA 300',  ok:true},
+      {l:'Income tax expense note prepared per Ind AS 12.79-88',                             ref:'Ind AS 12.79',   ok:true},
+      {l:'Compliance with Companies Act 2013 Schedule III presentation',                     ref:'Sch III Part I',  ok:true},
     ];
-
-    cl.innerHTML = checks.map(c => {
-      const status = c.ok && !c.warn ? 'done' : c.warn ? 'warn' : 'fail';
-      const icon = status === 'done' ? '✓' : status === 'warn' ? '!' : '✗';
-      return `
-        <div class="checklist-item">
-          <div class="check-icon check-${status}">${icon}</div>
-          <div class="check-label">
-            ${c.label}
-            ${c.note ? `<div class="text-small text-muted mt-4">${c.note}</div>` : ''}
-          </div>
-          <div class="check-ref">${c.ref}</div>
-        </div>
-      `;
+    wrap.innerHTML=checks.map(c=>{
+      const st = c.ok&&!c.warn?'done':c.warn?'warn':'fail';
+      const ico= st==='done'?'✓':st==='warn'?'!':'✗';
+      return `<div class="chk-item">
+        <div class="chk-ico chk-${st}">${ico}</div>
+        <div class="chk-lbl">${c.l}${c.note?`<div style="font-size:11px;color:var(--ink-4);margin-top:2px">${c.note}</div>`:''}</div>
+        <div class="chk-ref">${c.ref}</div>
+      </div>`;
     }).join('');
   }
 
-  /* ────────────────────────────────
-     ETR RECONCILIATION TABLE
-  ──────────────────────────────── */
-  function buildETRReconciliation(ct, dt, etr, statutoryRate) {
-    const tbl = $('etr-table');
-    if (!tbl || !ct.bookProfit) return;
-
-    const rate = statutoryRate / 100;
-    const taxAtStatutory = ct.bookProfit * rate;
-    const etrAmt = ct.grossTax + dt.deferredPLCharge;
-    const diff = etrAmt - taxAtStatutory;
-
-    tbl.innerHTML = `
-      <table class="wp-table">
-        <thead>
-          <tr>
-            <th>Particulars</th>
-            <th class="r">Amount (₹)</th>
-            <th class="r">Rate (%)</th>
-          </tr>
-        </thead>
+  /* ══════════════════════════════════════
+     ETR RECONCILIATION
+  ══════════════════════════════════════ */
+  function buildETR(ct, dt, etr, statRate){
+    const tbl=$('etr-tbl'); if(!tbl||!ct.bookProfit) return;
+    const r=statRate/100;
+    const taxAtStat=ct.bookProfit*r;
+    const etrAmt=ct.grossTax+dt.dtPLCharge;
+    tbl.innerHTML=`
+      <table class="wt">
+        <thead><tr><th>Particulars</th><th class="r">₹</th><th class="r">Rate %</th></tr></thead>
         <tbody>
-          <tr>
-            <td>Profit Before Tax (Book Profit)</td>
-            <td class="r">${fmt(ct.bookProfit)}</td>
-            <td class="r">—</td>
-          </tr>
-          <tr>
-            <td>Tax at statutory rate of ${statutoryRate.toFixed(3)}%</td>
-            <td class="r">${fmt(taxAtStatutory)}</td>
-            <td class="r">${statutoryRate.toFixed(3)}%</td>
-          </tr>
-          <tr>
-            <td style="padding-left:24px;color:var(--ink-3)">Effect of non-deductible expenses</td>
-            <td class="r">—</td>
-            <td class="r">—</td>
-          </tr>
-          <tr>
-            <td style="padding-left:24px;color:var(--ink-3)">Effect of exempt income</td>
-            <td class="r">—</td>
-            <td class="r">—</td>
-          </tr>
-          <tr>
-            <td style="padding-left:24px;color:var(--ink-3)">Effect of deferred tax movement</td>
-            <td class="r">${fmtSign(dt.deferredPLCharge)}</td>
-            <td class="r">${ct.bookProfit ? fmtPct(dt.deferredPLCharge / ct.bookProfit * 100) : '—'}</td>
-          </tr>
-          <tr>
-            <td style="padding-left:24px;color:var(--ink-3)">Other adjustments</td>
-            <td class="r">—</td>
-            <td class="r">—</td>
-          </tr>
+          <tr><td>Profit Before Tax</td><td class="r">${fmt(ct.bookProfit)}</td><td class="r">—</td></tr>
+          <tr><td>Tax at statutory rate of ${statRate.toFixed(3)}%</td><td class="r">${fmt(taxAtStat)}</td><td class="r">${statRate.toFixed(3)}%</td></tr>
+          <tr><td style="padding-left:20px;color:var(--ink-3)">Non-deductible expenses</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td style="padding-left:20px;color:var(--ink-3)">Exempt income</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td style="padding-left:20px;color:var(--ink-3)">Deferred tax movement</td><td class="r">${fmtSign(dt.dtPLCharge)}</td><td class="r">${ct.bookProfit?fmtPct(dt.dtPLCharge/ct.bookProfit*100):'—'}</td></tr>
+          <tr><td style="padding-left:20px;color:var(--ink-3)">Other adjustments</td><td class="r">—</td><td class="r">—</td></tr>
         </tbody>
-        <tfoot>
-          <tr class="total-row">
-            <td>Income Tax Expense (Effective Rate: ${fmtPct(etr)})</td>
-            <td class="r">${fmt(etrAmt)}</td>
-            <td class="r">${fmtPct(etr)}</td>
-          </tr>
-        </tfoot>
-      </table>
-    `;
+        <tfoot><tr class="tot-row"><td>Effective Tax Rate / Income Tax Expense</td><td class="r">${fmt(etrAmt)}</td><td class="r">${fmtPct(etr)}</td></tr></tfoot>
+      </table>`;
   }
 
-  /* ────────────────────────────────
-     PROGRESS BAR
-  ──────────────────────────────── */
-  function updateProgress(state) {
-    let filled = 0;
-    if ($('ci-name')?.value) filled++;
-    if ($('ci-fy')?.value) filled++;
-    if (state.ctRows.some(r => r.amt > 0)) filled++;
-    if (state.dtAsset.some(r => r.ca > 0 || r.tb > 0)) filled++;
-    if (state.dtLiab.some(r => r.ca > 0 || r.tb > 0)) filled++;
-    const pct = Math.round((filled / 5) * 100);
-    const bar = $('progress-fill');
-    if (bar) bar.style.width = pct + '%';
-    const pctEl = $('progress-pct');
-    if (pctEl) pctEl.textContent = pct + '% complete';
+  /* ══════════════════════════════════════
+     PROGRESS
+  ══════════════════════════════════════ */
+  function updateProgress(state){
+    let n=0;
+    if($('ci-name')?.value) n++;
+    if($('ci-fy')?.value) n++;
+    if(state.ctRows.some(r=>parseFloat(r.amt)>0)) n++;
+    if(state.dtAsset.some(r=>r.ca>0||r.tb>0)) n++;
+    if(state.dtLiab.some(r=>r.ca>0||r.tb>0)) n++;
+    const p=Math.round(n/5*100);
+    const b=$('sb-prog'); if(b) b.style.width=p+'%';
+    const t=$('sb-prog-txt'); if(t) t.textContent=p+'% complete';
   }
 
-  /* ── PUBLIC ── */
-  return { run, fmt, fmtSign, fmtPct, computeCurrentTax, computeDeferredTax };
-
+  return { run, fmt, fmtSign, fmtPct };
 })();
