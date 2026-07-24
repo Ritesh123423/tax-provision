@@ -1,18 +1,34 @@
 'use strict';
-/* =====================================================
-   STATE.JS - Application State & Table Rendering
-   K G Somani & Co LLP
-===================================================== */
+
+/**
+ * STATE.JS - Application State Management and Table Rendering
+ * K G Somani & Co LLP
+ *
+ * This module manages:
+ *   - Application data state (current tax rows, deferred tax rows)
+ *   - Default row templates for common Ind AS 12 scenarios
+ *   - Table rendering for all editable grids
+ *   - Data mutations with automatic re-computation
+ */
+
 const State = (() => {
 
+  /**
+   * Generates a unique identifier for each row.
+   * @returns {string} Unique ID prefixed with underscore
+   */
   const uid = () => '_' + Math.random().toString(36).substr(2, 9);
 
+  /** Central application data store */
   const data = { ctRows: [], dtAsset: [], dtLiab: [], dtOther: [] };
 
-  /* =====================================================
-     DEFAULT ROWS - blank, structured, ready to fill
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     DEFAULT ROW TEMPLATES
+     Pre-populated with common items encountered in Indian tax provisions
+     ------------------------------------------------------------------ */
+
   function initDefaults() {
+    /* --- Current Tax: Book profit to taxable income reconciliation --- */
     data.ctRows = [
       { id: uid(), label: 'Net Profit as per Statement of Profit & Loss (before tax)', amt: '', type: 'book', locked: true },
       { id: uid(), label: 'Add: Depreciation as per Companies Act 2013 / Ind AS 16 (added back)', amt: '', type: 'add' },
@@ -29,6 +45,7 @@ const State = (() => {
       { id: uid(), label: 'Add / (Less): Other adjustments - specify', amt: '', type: 'add' },
     ];
 
+    /* --- Deferred Tax: Assets (CA vs TB) --- */
     data.dtAsset = [
       { id: uid(), label: 'Property, Plant & Equipment - Net Block (Ind AS 16)', ca: '', tb: '', note: 'CA = WDV per Schedule II / Ind AS | Tax Base = WDV per IT Act Sec 32' },
       { id: uid(), label: 'Capital Work-in-Progress', ca: '', tb: '', note: 'Tax Base = 0 (no depreciation until asset put to use u/s 32)' },
@@ -40,6 +57,7 @@ const State = (() => {
       { id: uid(), label: 'Other Non-Current Assets', ca: '', tb: '', note: '' },
     ];
 
+    /* --- Deferred Tax: Liabilities & Provisions (CA vs TB) --- */
     data.dtLiab = [
       { id: uid(), label: 'Provision for Gratuity - Defined Benefit Obligation (Ind AS 19)', ca: '', tb: '', note: 'Tax Base = 0 (allowed only on actual payment u/s 43B / 40A(7))' },
       { id: uid(), label: 'Provision for Leave Encashment', ca: '', tb: '', note: 'Tax Base = 0 (allowed on payment basis u/s 43B)' },
@@ -51,6 +69,7 @@ const State = (() => {
       { id: uid(), label: 'Other Provisions', ca: '', tb: '', note: '' },
     ];
 
+    /* --- Deferred Tax: Other Items (Losses, MAT Credit) --- */
     data.dtOther = [
       { id: uid(), label: 'Unabsorbed Depreciation carried forward u/s 32(2)', amt: '', type: 'dta', note: 'Recognise only if virtually certain of future taxable profits' },
       { id: uid(), label: 'Business Loss carried forward u/s 72 (8-year limit)', amt: '', type: 'dta', note: 'Recognise only if virtually certain' },
@@ -60,9 +79,10 @@ const State = (() => {
     renderAll();
   }
 
-  /* =====================================================
-     RENDER ALL
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     RENDER ALL TABLES
+     ------------------------------------------------------------------ */
+
   function renderAll() {
     renderCT();
     renderDtAsset();
@@ -70,16 +90,20 @@ const State = (() => {
     renderDtOther();
   }
 
-  /* CURRENT TAX TABLE */
+  /* ------------------------------------------------------------------
+     CURRENT TAX TABLE RENDERER
+     ------------------------------------------------------------------ */
+
   function renderCT() {
-    const tbody = document.getElementById('ct-body'); if (!tbody) return;
+    const tbody = document.getElementById('ct-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
+
     data.ctRows.forEach((row, i) => {
-      const cls    = { book: '', add: '', less: '' }[row.type] || '';
       const tpill  = { book: 'pill-blue', add: 'pill-dta', less: 'pill-amber' }[row.type];
       const tlabel = { book: 'Book', add: 'Add', less: 'Less' }[row.type];
-      const tr     = document.createElement('tr');
-      tr.className = cls;
+
+      const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="rn" style="width:30px">${i + 1}</td>
         <td style="width:80px">
@@ -108,10 +132,15 @@ const State = (() => {
     });
   }
 
-  /* DT ASSETS TABLE */
+  /* ------------------------------------------------------------------
+     DEFERRED TAX: ASSETS TABLE RENDERER
+     ------------------------------------------------------------------ */
+
   function renderDtAsset() {
-    const tbody = document.getElementById('dt-asset-body'); if (!tbody) return;
+    const tbody = document.getElementById('dt-asset-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
+
     const rate = (parseFloat(document.getElementById('ci-rate')?.value) || 25.168) / 100;
 
     data.dtAsset.forEach((row, i) => {
@@ -154,10 +183,15 @@ const State = (() => {
     });
   }
 
-  /* DT LIABILITIES TABLE */
+  /* ------------------------------------------------------------------
+     DEFERRED TAX: LIABILITIES TABLE RENDERER
+     ------------------------------------------------------------------ */
+
   function renderDtLiab() {
-    const tbody = document.getElementById('dt-liab-body'); if (!tbody) return;
+    const tbody = document.getElementById('dt-liab-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
+
     const rate = (parseFloat(document.getElementById('ci-rate')?.value) || 25.168) / 100;
 
     data.dtLiab.forEach((row, i) => {
@@ -200,10 +234,15 @@ const State = (() => {
     });
   }
 
-  /* DT OTHER TABLE */
+  /* ------------------------------------------------------------------
+     DEFERRED TAX: OTHER ITEMS TABLE RENDERER
+     ------------------------------------------------------------------ */
+
   function renderDtOther() {
-    const tbody = document.getElementById('dt-other-body'); if (!tbody) return;
+    const tbody = document.getElementById('dt-other-body');
+    if (!tbody) return;
     tbody.innerHTML = '';
+
     const rate = (parseFloat(document.getElementById('ci-rate')?.value) || 25.168) / 100;
 
     data.dtOther.forEach((row, i) => {
@@ -239,61 +278,78 @@ const State = (() => {
     });
   }
 
-  /* =====================================================
-     MUTATIONS
-  ===================================================== */
-  function updCT(id, f, val) {
+  /* ------------------------------------------------------------------
+     DATA MUTATIONS
+     ------------------------------------------------------------------ */
+
+  function updCT(id, field, val) {
     const r = data.ctRows.find(x => x.id === id);
-    if (r) r[f] = f === 'amt' ? val : val;
+    if (r) r[field] = val;
   }
+
   function addCT() {
     data.ctRows.push({ id: uid(), label: 'New line item', amt: '', type: 'add' });
     renderCT();
   }
+
   function delCT(id) {
     data.ctRows = data.ctRows.filter(x => x.id !== id);
-    renderCT(); go();
+    renderCT();
+    go();
   }
 
-  function updDT(sec, id, f, val) {
-    const arr = sec === 'asset' ? data.dtAsset : data.dtLiab;
+  function updDT(section, id, field, val) {
+    const arr = section === 'asset' ? data.dtAsset : data.dtLiab;
     const r   = arr.find(x => x.id === id);
-    if (r) r[f] = ['ca', 'tb'].includes(f) ? val : val;
-    if (sec === 'asset') renderDtAsset(); else renderDtLiab();
+    if (r) r[field] = val;
+    if (section === 'asset') renderDtAsset(); else renderDtLiab();
   }
-  function addDT(sec) {
+
+  function addDT(section) {
     const nr = { id: uid(), label: 'New item', ca: '', tb: '', note: '' };
-    if (sec === 'asset') data.dtAsset.push(nr); else data.dtLiab.push(nr);
-    if (sec === 'asset') renderDtAsset(); else renderDtLiab();
-    go();
-  }
-  function delDT(sec, id) {
-    if (sec === 'asset') data.dtAsset = data.dtAsset.filter(x => x.id !== id);
-    else                 data.dtLiab  = data.dtLiab.filter(x => x.id !== id);
-    if (sec === 'asset') renderDtAsset(); else renderDtLiab();
+    if (section === 'asset') data.dtAsset.push(nr); else data.dtLiab.push(nr);
+    if (section === 'asset') renderDtAsset(); else renderDtLiab();
     go();
   }
 
-  function updOther(id, f, val) {
-    const r = data.dtOther.find(x => x.id === id);
-    if (r) r[f] = f === 'amt' ? val : val;
+  function delDT(section, id) {
+    if (section === 'asset') data.dtAsset = data.dtAsset.filter(x => x.id !== id);
+    else                     data.dtLiab  = data.dtLiab.filter(x => x.id !== id);
+    if (section === 'asset') renderDtAsset(); else renderDtLiab();
+    go();
   }
+
+  function updOther(id, field, val) {
+    const r = data.dtOther.find(x => x.id === id);
+    if (r) r[field] = val;
+  }
+
   function addOther() {
     data.dtOther.push({ id: uid(), label: 'New item', amt: '', type: 'dta', note: '' });
-    renderDtOther(); go();
+    renderDtOther();
+    go();
   }
+
   function delOther(id) {
     data.dtOther = data.dtOther.filter(x => x.id !== id);
-    renderDtOther(); go();
+    renderDtOther();
+    go();
   }
 
-  /* DEBOUNCED COMPUTE */
-  let _t = null;
+  /* ------------------------------------------------------------------
+     DEBOUNCED RECOMPUTATION
+     Triggers Compute.run 90ms after last input to avoid excessive recalculation
+     ------------------------------------------------------------------ */
+
+  let _timer = null;
   function go() {
-    clearTimeout(_t);
-    _t = setTimeout(() => Compute.run(data), 90);
+    clearTimeout(_timer);
+    _timer = setTimeout(() => Compute.run(data), 90);
   }
 
+  /* ------------------------------------------------------------------
+     PUBLIC API
+     ------------------------------------------------------------------ */
   return {
     data, initDefaults, renderAll,
     renderCT, renderDtAsset, renderDtLiab, renderDtOther,

@@ -1,16 +1,45 @@
 'use strict';
-/* =====================================================
-   COMPUTE.JS - Ind AS 12 Tax Provision Engine
-   K G Somani & Co LLP
-===================================================== */
+
+/**
+ * COMPUTE.JS - Ind AS 12 Deferred Tax Computation Engine
+ * K G Somani & Co LLP
+ *
+ * This module contains all computational logic for:
+ *   1. Current Tax computation (Income Tax Act, 1961)
+ *   2. Deferred Tax computation (Ind AS 12 - Balance Sheet Approach)
+ *   3. Journal Entry generation
+ *   4. Disclosure note generation
+ *   5. ETR Reconciliation
+ *   6. Auditor QC Checklist
+ *
+ * Core Principle (Ind AS 12):
+ *   Temporary Difference = Carrying Amount (Ind AS) - Tax Base (IT Act)
+ *   Assets:   CA > TB  => Taxable TD   => DTL
+ *             CA < TB  => Deductible TD => DTA
+ *   Liabilities: CA > TB  => Deductible TD => DTA
+ *                CA < TB  => Taxable TD   => DTL
+ */
+
 const Compute = (() => {
 
+  /* ------------------------------------------------------------------
+     DOM HELPERS
+     ------------------------------------------------------------------ */
   const $   = id => document.getElementById(id);
   const v   = id => parseFloat($(id)?.value) || 0;
   const set = (id, t) => { const e = $(id); if (e) e.textContent = t; };
   const htm = (id, h) => { const e = $(id); if (e) e.innerHTML = h; };
 
-  /* FORMAT - Indian numbering */
+  /* ------------------------------------------------------------------
+     NUMBER FORMATTING (Indian Numbering System)
+     ------------------------------------------------------------------ */
+
+  /**
+   * Formats a number using Indian locale with specified decimal places.
+   * @param {number} n - The number to format
+   * @param {number} dec - Decimal places (default 0)
+   * @returns {string} Formatted number string
+   */
   function fmt(n, dec = 0) {
     if (n === null || n === undefined || isNaN(n)) return '-';
     return new Intl.NumberFormat('en-IN', {
@@ -19,25 +48,51 @@ const Compute = (() => {
     }).format(Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec));
   }
 
+  /**
+   * Formats a number with brackets for negative values.
+   * @param {number} n - The number to format
+   * @returns {string} Formatted number with brackets for negatives
+   */
   function fmtBracket(n) {
     if (!n || isNaN(n)) return '-';
     return n < 0 ? '(' + fmt(Math.abs(n)) + ')' : fmt(n);
   }
 
+  /**
+   * Formats a number as a percentage with 2 decimal places.
+   * @param {number} n - The percentage value
+   * @returns {string} Formatted percentage string
+   */
   function fmtPct(n) {
     if (isNaN(n) || !isFinite(n)) return '-';
     return n.toFixed(2) + '%';
   }
 
-  /* =====================================================
-     CURRENT TAX
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     CURRENT TAX COMPUTATION
+     ------------------------------------------------------------------ */
+
+  /**
+   * Computes current tax based on book profit and permanent adjustments.
+   *
+   * Logic:
+   *   1. Start with book profit
+   *   2. Add: Disallowed expenses, additions per IT Act
+   *   3. Less: Deductions, exempt income, Section 43B payments
+   *   4. Apply tax rate (or MAT rate if regime = MAT)
+   *   5. Deduct: TDS/Advance Tax and MAT credit utilised
+   *
+   * @param {Object} state - Application state containing ctRows
+   * @returns {Object} Current tax result object
+   */
   function computeCT(state) {
     const rate    = v('ci-rate') / 100;
     const matRate = v('ci-mat')  / 100;
     const regime  = $('ci-regime')?.value || 'new';
 
-    let bookProfit = 0, taxable = 0;
+    let bookProfit = 0;
+    let taxable    = 0;
+
     state.ctRows.forEach(r => {
       const a = parseFloat(r.amt) || 0;
       if (r.type === 'book')      { bookProfit = a; taxable = a; }
@@ -53,7 +108,6 @@ const Compute = (() => {
     const matUtil  = v('ct-matutil');
     const netCT    = Math.max(0, grossTax - tds - matUtil);
 
-    /* Update CT display */
     set('ct-taxable-disp', fmt(taxable));
     set('ct2-ti',   fmt(taxable));
     set('ct2-rate', (effRate * 100).toFixed(3) + '%');
@@ -63,59 +117,90 @@ const Compute = (() => {
     return { bookProfit, taxable, grossTax, tds, matUtil, netCT, effRate };
   }
 
-  /* =====================================================
-     DEFERRED TAX - Ind AS 12 Balance Sheet Approach
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     DEFERRED TAX COMPUTATION (Ind AS 12 Balance Sheet Approach)
+     ------------------------------------------------------------------ */
+
+  /**
+   * Computes deferred tax assets and liabilities using the balance sheet approach.
+   *
+   * Core Formula:
+   *   Temporary Difference (TD) = Carrying Amount (CA) - Tax Base (TB)
+   *   Tax Effect (TE)           = |TD| x Tax Rate
+   *
+   * For Assets:
+   *   TD > 0  (CA > TB)  => Taxable temporary difference   => DTL
+   *   TD < 0  (CA < TB)  => Deductible temporary difference => DTA
+   *
+   * For Liabilities:
+   *   TD > 0  (CA > TB)  => Deductible temporary difference => DTA
+   *   TD < 0  (CA < TB)  => Taxable temporary difference   => DTL
+   *
+   * P&L Impact:
+   *   dtPLCharge = -(Closing Net DTA/DTL - Opening Net DTA/DTL)
+   *   Positive = Charge to P&L (expense)
+   *   Negative = Credit to P&L (income)
+   *
+   * @param {Object} state - Application state containing dtAsset, dtLiab, dtOther
+   * @returns {Object} Deferred tax result object
+   */
   function computeDT(state) {
     const rate = v('ci-rate') / 100;
-    let grossDTA = 0, grossDTL = 0;
-    const assetRows = [], liabRows = [], otherRows = [];
+    let grossDTA = 0;
+    let grossDTL = 0;
+    const assetRows = [];
+    const liabRows  = [];
+    const otherRows = [];
 
-    /* ASSETS: CA > TB = Taxable TD = DTL | CA < TB = Deductible TD = DTA */
+    /* --- SECTION A: ASSETS --- */
     state.dtAsset.forEach(r => {
-      const ca = parseFloat(r.ca) || 0;
-      const tb = parseFloat(r.tb) || 0;
+      const ca   = parseFloat(r.ca) || 0;
+      const tb   = parseFloat(r.tb) || 0;
       const diff = ca - tb;
-      const te = Math.abs(diff) * rate;
+      const te   = Math.abs(diff) * rate;
       const nature = diff > 0 ? 'DTL' : diff < 0 ? 'DTA' : '';
-      if (diff > 0) grossDTL += te;
+
+      if (diff > 0)      grossDTL += te;
       else if (diff < 0) grossDTA += te;
+
       assetRows.push({ ...r, diff, te, nature });
     });
 
-    /* LIABILITIES: CA > TB = Deductible TD = DTA | CA < TB = Taxable TD = DTL */
+    /* --- SECTION B: LIABILITIES & PROVISIONS --- */
     state.dtLiab.forEach(r => {
-      const ca = parseFloat(r.ca) || 0;
-      const tb = parseFloat(r.tb) || 0;
+      const ca   = parseFloat(r.ca) || 0;
+      const tb   = parseFloat(r.tb) || 0;
       const diff = ca - tb;
-      const te = Math.abs(diff) * rate;
+      const te   = Math.abs(diff) * rate;
       const nature = diff > 0 ? 'DTA' : diff < 0 ? 'DTL' : '';
-      if (diff > 0) grossDTA += te;
+
+      if (diff > 0)      grossDTA += te;
       else if (diff < 0) grossDTL += te;
+
       liabRows.push({ ...r, diff, te, nature });
     });
 
-    /* OTHER - losses, MAT credit etc. */
+    /* --- SECTION C: OTHER ITEMS (Losses, MAT Credit, etc.) --- */
     state.dtOther.forEach(r => {
       const amt = parseFloat(r.amt) || 0;
-      const te = amt * rate;
+      const te  = amt * rate;
       if (r.type === 'dta') grossDTA += te;
-      else grossDTL += te;
+      else                  grossDTL += te;
       otherRows.push({ ...r, te });
     });
 
-    /* P&L Impact */
+    /* --- P&L IMPACT COMPUTATION --- */
     const openingNet = v('ob-dta') - v('ob-dtl');
     const closingNet = grossDTA - grossDTL;
-    const dtPLCharge = -(closingNet - openingNet); /* positive = charge */
+    const dtPLCharge = -(closingNet - openingNet);
 
-    /* Closing balances */
+    /* --- CLOSING BALANCE SHEET POSITIONS --- */
     const matNew     = v('mv-mat-new');
     const closingDTA = grossDTA + matNew;
     const closingDTL = grossDTL;
     const closingMAT = v('ob-mat') + matNew - v('ct-matutil');
 
-    /* Update display */
+    /* --- UPDATE DISPLAY: SECTION SUBTOTALS --- */
     const aDTA = assetRows.reduce((s, r) => s + (r.nature === 'DTA' ? r.te : 0), 0);
     const aDTL = assetRows.reduce((s, r) => s + (r.nature === 'DTL' ? r.te : 0), 0);
     const lDTA = liabRows.reduce((s, r)  => s + (r.nature === 'DTA' ? r.te : 0), 0);
@@ -131,7 +216,7 @@ const Compute = (() => {
       ? fmt(dtPLCharge) + '  (Charge to P&L)'
       : fmt(Math.abs(dtPLCharge)) + '  (Credit to P&L)');
 
-    /* Movement */
+    /* --- UPDATE DISPLAY: MOVEMENT SCHEDULE --- */
     set('mv-dta-open',  fmt(v('ob-dta')));
     set('mv-dta-cy',    fmt(grossDTA));
     set('mv-dta-close', fmt(closingDTA));
@@ -150,18 +235,25 @@ const Compute = (() => {
     };
   }
 
-  /* =====================================================
-     MASTER RUN
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     MASTER COMPUTATION RUNNER
+     ------------------------------------------------------------------ */
+
+  /**
+   * Executes the full computation pipeline and updates all display elements.
+   * @param {Object} state - Application state
+   * @returns {Object|null} Computation results or null if state invalid
+   */
   function run(state) {
     if (!state) return null;
+
     const ct    = computeCT(state);
     const dt    = computeDT(state);
     const total = ct.grossTax + dt.dtPLCharge;
     const etr   = ct.bookProfit ? (total / ct.bookProfit * 100) : 0;
     const statR = v('ci-rate');
 
-    /* KPI */
+    /* --- UPDATE KEY PERFORMANCE INDICATORS --- */
     set('kpi-ct',    fmt(ct.grossTax));
     set('kpi-dt',    fmt(Math.abs(dt.dtPLCharge)));
     set('kpi-total', fmt(total));
@@ -176,6 +268,7 @@ const Compute = (() => {
     const etrVar = etr - statR;
     set('kpi-etr-var', (etrVar >= 0 ? '+' : '') + fmtPct(etrVar) + ' vs statutory ' + statR.toFixed(3) + '%');
 
+    /* --- GENERATE OUTPUT SECTIONS --- */
     buildJEs(ct, dt);
     buildDisclosure(ct, dt, total, etr);
     buildChecklist(ct, dt, state);
@@ -185,9 +278,10 @@ const Compute = (() => {
     return { ct, dt, total, etr };
   }
 
-  /* =====================================================
-     JOURNAL ENTRIES
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     JOURNAL ENTRY GENERATION
+     ------------------------------------------------------------------ */
+
   function buildJEs(ct, dt) {
     const fy  = $('ci-fy')?.value  || 'FY ____';
     const dtv = $('ci-date')?.value
@@ -235,11 +329,14 @@ const Compute = (() => {
     }
   }
 
-  /* =====================================================
-     DISCLOSURE NOTE (Ind AS 12.79-88)
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     IND AS 12 DISCLOSURE NOTE GENERATION
+     ------------------------------------------------------------------ */
+
   function buildDisclosure(ct, dt, total, etr) {
-    const dn = $('disclosure-note'); if (!dn) return;
+    const dn = $('disclosure-note');
+    if (!dn) return;
+
     const fy   = $('ci-fy')?.value   || 'FY ____';
     const date = $('ci-date')?.value
       ? new Date($('ci-date').value).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -295,11 +392,14 @@ const Compute = (() => {
     </div>`;
   }
 
-  /* =====================================================
-     AUDITOR CHECKLIST
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     AUDITOR QC CHECKLIST
+     ------------------------------------------------------------------ */
+
   function buildChecklist(ct, dt, state) {
-    const wrap = $('checklist-wrap'); if (!wrap) return;
+    const wrap = $('checklist-wrap');
+    if (!wrap) return;
+
     const hasAssets = state.dtAsset.length > 0;
     const hasLiab   = state.dtLiab.length  > 0;
     const obFilled  = v('ob-dta') > 0 || v('ob-dtl') > 0;
@@ -327,7 +427,7 @@ const Compute = (() => {
 
     wrap.innerHTML = checks.map(c => {
       const st  = c.ok && !c.warn ? 'done' : 'warn';
-      const ico = st === 'done' ? '&#10003;' : '!';
+      const ico = st === 'done' ? 'OK' : '!';
       return `<div class="chk-item">
         <div class="chk-ico chk-${st}">${ico}</div>
         <div>
@@ -339,16 +439,21 @@ const Compute = (() => {
     }).join('');
   }
 
-  /* =====================================================
-     ETR RECONCILIATION
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     ETR RECONCILIATION TABLE
+     ------------------------------------------------------------------ */
+
   function buildETR(ct, dt, total, etr) {
-    const tbl = $('etr-tbl'); if (!tbl) return;
+    const tbl = $('etr-tbl');
+    if (!tbl) return;
+
     const rate = v('ci-rate');
+
     if (!ct.bookProfit) {
       tbl.innerHTML = '<div style="padding:20px;color:var(--ink-4)">Enter book profit in Current Tax to generate ETR reconciliation.</div>';
       return;
     }
+
     const taxAtStat = ct.bookProfit * rate / 100;
     tbl.innerHTML = `
       <table class="wt">
@@ -365,9 +470,10 @@ const Compute = (() => {
       </table>`;
   }
 
-  /* =====================================================
-     PROGRESS
-  ===================================================== */
+  /* ------------------------------------------------------------------
+     PROGRESS INDICATOR
+     ------------------------------------------------------------------ */
+
   function updateProgress(state) {
     let n = 0;
     if ($('ci-name')?.value) n++;
@@ -376,8 +482,10 @@ const Compute = (() => {
     if (state.dtAsset.some(r => r.ca > 0 || r.tb > 0)) n++;
     if (state.dtLiab.some(r => r.ca > 0 || r.tb > 0)) n++;
     const p = Math.round(n / 5 * 100);
-    const b = $('sb-prog');     if (b) b.style.width = p + '%';
-    const t = $('sb-prog-txt'); if (t) t.textContent = p + '% complete';
+    const b = $('sb-prog');
+    const t = $('sb-prog-txt');
+    if (b) b.style.width = p + '%';
+    if (t) t.textContent = p + '% complete';
   }
 
   return { run, fmt, fmtBracket, fmtPct };
