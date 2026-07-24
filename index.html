@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Tax Provision Workpaper - K G Somani &amp; Co LLP</title>
-<meta name="description" content="Ind AS 12 Income Tax Provision Workpaper - K G Somani & Co LLP, Chartered Accountants"/>
+<meta name="description" content="Ind AS 12 Income Tax Provision Workpaper - K G Somani &amp; Co LLP"/>
 <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
@@ -11,17 +12,19 @@
 <!-- HEADER -->
 <header class="hdr">
   <div class="hdr-l">
-    <div class="hdr-logo">KGS</div>
-    <div><div class="hdr-firm">K G Somani &amp; Co LLP</div><div class="hdr-sub">Chartered Accountants</div></div>
-    <div class="hdr-div"></div>
+    <div class="logo">KGS</div>
+    <div>
+      <div class="hdr-firm">K G Somani &amp; Co LLP</div>
+      <div class="hdr-tag">Chartered Accountants</div>
+    </div>
+    <div class="hdr-sep"></div>
     <div class="hdr-tool">Income Tax Provision Workpaper</div>
   </div>
   <div class="hdr-r">
-    <span class="hdr-meta">Ind AS 12 | Balance Sheet Approach</span>
-    <button class="btn btn-ghost" onclick="Excel.exportWorkpaper()">⬇ Export Excel</button>
-    <button class="btn btn-ghost" onclick="UI.print_()">⎙ Print / PDF</button>
-    <button class="btn btn-ghost" onclick="UI.reset()">↺ Reset</button>
-    <button class="btn btn-primary" onclick="UI.compute()">▶ Compute &nbsp;<span style="opacity:.5;font-size:10px">Ctrl+↵</span></button>
+    <button class="btn btn-ghost" onclick="Excel.exportWorkpaper()">&#8659; Export Excel</button>
+    <button class="btn btn-ghost" onclick="UI.print_()">&#9113; Print / PDF</button>
+    <button class="btn btn-ghost" onclick="UI.reset()">&#8635; Reset</button>
+    <button class="btn btn-primary" onclick="UI.compute()">&#9654; Compute</button>
   </div>
 </header>
 
@@ -29,161 +32,262 @@
 
 <!-- SIDEBAR -->
 <nav class="sidebar">
-  <div class="sb-top">
-    <div class="sb-grp">
-      <div class="sb-lbl">Workpaper</div>
-      <div class="nav-item active" data-sec="client"><div class="nav-num">1</div>Client &amp; Engagement</div>
-      <div class="nav-item" data-sec="current"><div class="nav-num">2</div>Current Tax</div>
-      <div class="nav-item" data-sec="deferred"><div class="nav-num">3</div>Deferred Tax</div>
-      <div class="nav-item" data-sec="movement"><div class="nav-num">4</div>DTA / DTL Movement</div>
-    </div>
-    <div class="sb-grp">
-      <div class="sb-lbl">Output</div>
-      <div class="nav-item" data-sec="summary"><div class="nav-num">5</div>Summary &amp; JE<span class="nav-badge">Final</span></div>
-      <div class="nav-item" data-sec="etr"><div class="nav-num">6</div>ETR Reconciliation</div>
-      <div class="nav-item" data-sec="disclosure"><div class="nav-num">7</div>Ind AS Disclosure</div>
-      <div class="nav-item" data-sec="checklist"><div class="nav-num">8</div>Auditor Checklist</div>
-    </div>
+  <div class="sb-body">
+    <div class="sb-label">Workpaper</div>
+    <div class="nav-item active" data-sec="client"><div class="nav-n">1</div>Client &amp; Engagement</div>
+    <div class="nav-item" data-sec="current"><div class="nav-n">2</div>Current Tax</div>
+    <div class="nav-item" data-sec="deferred"><div class="nav-n">3</div>Deferred Tax</div>
+    <div class="nav-item" data-sec="movement"><div class="nav-n">4</div>DTA / DTL Movement</div>
+    <div class="sb-label" style="margin-top:6px">Output</div>
+    <div class="nav-item" data-sec="summary"><div class="nav-n">5</div>Summary &amp; JE <span class="nav-badge">Final</span></div>
+    <div class="nav-item" data-sec="etr"><div class="nav-n">6</div>ETR Reconciliation</div>
+    <div class="nav-item" data-sec="disclosure"><div class="nav-n">7</div>Ind AS Disclosure</div>
+    <div class="nav-item" data-sec="checklist"><div class="nav-n">8</div>Auditor Checklist</div>
   </div>
-  <div class="sb-bottom">
-    <div class="sb-meta">Client: <b id="sb-client-name">Not Set</b></div>
-    <div class="sb-meta">FY: <b id="sb-fy">Not Set</b></div>
+  <div class="sb-foot">
+    <div class="sb-meta">Client: <b id="sb-client">-</b></div>
+    <div class="sb-meta" style="margin-top:2px">FY: <b id="sb-fy">-</b></div>
     <div class="sb-prog-wrap"><div class="sb-prog" id="sb-prog" style="width:0%"></div></div>
     <div class="sb-prog-txt" id="sb-prog-txt">0% complete</div>
   </div>
 </nav>
 
 <!-- MAIN -->
-<main class="main" id="main-wrap">
+<main class="main">
 
-<!-- ═══════════════════════════════════
-     1. CLIENT & ENGAGEMENT
-═══════════════════════════════════ -->
+<!-- 1. CLIENT -->
 <section class="section active" id="sec-client">
   <div class="pg-hdr">
-    <div><div class="pg-eyebrow">Step 1 of 8</div><div class="pg-title">Client &amp; Engagement Details</div><div class="pg-desc">Set up client, tax regime, and opening balances.</div></div>
+    <div>
+      <div class="pg-eye">Step 1 of 8</div>
+      <div class="pg-title">Client &amp; Engagement</div>
+      <div class="pg-desc">Fill client details before computing the provision.</div>
+    </div>
   </div>
 
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci b">🏢</div>Client Information</div><span class="badge badge-blue">Engagement Master</span></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico b">&#127970;</div>Client Information</div>
+      <span class="badge badge-blue">Engagement Master</span>
+    </div>
     <div class="card-body">
       <div class="fg c3">
-        <div class="field"><label class="lbl">Client Name *</label><input class="inp" id="ci-name" value="" oninput="UI.updateClient()" placeholder="Enter client name"/></div>
-        <div class="field"><label class="lbl">CIN / PAN</label><input class="inp mono" id="ci-cin" value="" placeholder="e.g., U12345MH2020PTC123456"/></div>
-        <div class="field"><label class="lbl">Financial Year *</label><input class="inp mono" id="ci-fy" value="" oninput="UI.updateClient()" placeholder="e.g., 2024-25"/></div>
-        <div class="field"><label class="lbl">Balance Sheet Date *</label><input class="inp" type="date" id="ci-date" value=""/></div>
-        <div class="field"><label class="lbl">Tax Rate (%) *</label><input class="inp mono" id="ci-rate" type="number" value="25.168" step="0.001" oninput="State.go()"/><div class="hint">Incl. surcharge + cess</div></div>
-        <div class="field"><label class="lbl">MAT Rate (%) u/s 115JB</label><input class="inp mono" id="ci-mat" type="number" value="17.472" step="0.001"/><div class="hint">Incl. surcharge + cess</div></div>
+        <div class="field">
+          <label class="lbl">Client Name *</label>
+          <input class="inp" id="ci-name" placeholder="e.g. ABC Private Limited" oninput="UI.updateClient()"/>
+        </div>
+        <div class="field">
+          <label class="lbl">CIN / PAN</label>
+          <input class="inp mono" id="ci-cin" placeholder="e.g. U74999MH2010PTC123456"/>
+        </div>
+        <div class="field">
+          <label class="lbl">Financial Year *</label>
+          <input class="inp mono" id="ci-fy" placeholder="e.g. 2024-25" oninput="UI.updateClient()"/>
+        </div>
+        <div class="field">
+          <label class="lbl">Balance Sheet Date *</label>
+          <input class="inp" type="date" id="ci-date"/>
+        </div>
+        <div class="field">
+          <label class="lbl">Tax Rate (%) *</label>
+          <input class="inp mono" id="ci-rate" type="number" value="25.168" step="0.001" oninput="State.go()"/>
+          <div class="hint">New regime Sec 115BAA incl. surcharge + cess</div>
+        </div>
+        <div class="field">
+          <label class="lbl">MAT Rate (%) u/s 115JB</label>
+          <input class="inp mono" id="ci-mat" type="number" value="17.472" step="0.001"/>
+          <div class="hint">15% + surcharge + H&amp;E cess = 17.472%</div>
+        </div>
       </div>
-      <div class="div-lbl"><span>Tax Regime</span></div>
+      <hr class="divline"/>
       <div class="fg c2">
-        <div class="field"><label class="lbl">Tax Regime</label>
+        <div class="field">
+          <label class="lbl">Tax Regime</label>
           <select class="inp" id="ci-regime" onchange="State.go()">
-            <option value="new" selected>New Regime - Sec 115BAA (25.168%)</option>
+            <option value="new">New Regime - Sec 115BAA (25.168%)</option>
             <option value="old">Old Regime - 30% + surcharge + cess (34.944%)</option>
             <option value="startup">Start-up Regime - Sec 115BAB (17.014%)</option>
-            <option value="mat">MAT applicable - u/s 115JB (17.472%)</option>
-          </select></div>
-        <div class="field"><label class="lbl">Reporting Standard</label>
+            <option value="mat">MAT applicable - u/s 115JB (book profit basis)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl">Reporting Standard</label>
           <select class="inp" id="ci-standard">
-            <option value="indas12" selected>Ind AS 12 - Income Taxes (Balance Sheet Approach)</option>
+            <option value="indas12">Ind AS 12 - Income Taxes (Balance Sheet Approach)</option>
             <option value="as22">AS 22 - Income Taxes (Income Statement Approach)</option>
-          </select></div>
+          </select>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci g">✍</div>Engagement Sign-Off</div></div>
+    <div class="card-hdr"><div class="card-title"><div class="cico g">&#9998;</div>Engagement Sign-Off</div></div>
     <div class="card-body">
       <div class="fg c3">
-        <div class="field"><label class="lbl">Prepared By</label><input class="inp" id="ci-prep" value="" placeholder="Enter name"/></div>
-        <div class="field"><label class="lbl">Reviewed By</label><input class="inp" id="ci-rev" value="" placeholder="Enter name"/></div>
-        <div class="field"><label class="lbl">Date of Preparation</label><input class="inp" type="date" id="ci-prepdate"/></div>
+        <div class="field">
+          <label class="lbl">Prepared By</label>
+          <input class="inp" id="ci-prep" placeholder="Name and designation"/>
+        </div>
+        <div class="field">
+          <label class="lbl">Reviewed By</label>
+          <input class="inp" id="ci-rev" placeholder="Name and designation"/>
+        </div>
+        <div class="field">
+          <label class="lbl">Date of Preparation</label>
+          <input class="inp" type="date" id="ci-prepdate"/>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci a">📂</div>Opening Balances <span class="badge badge-blue" style="margin-left:8px">Prior Year Audited FS</span></div></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico a">&#128194;</div>Opening Balances</div>
+      <span class="badge badge-blue">Prior Year Audited FS</span>
+    </div>
     <div class="card-body">
-      <div class="notice amber"><span class="ni">⚠</span><span>Opening balances must match prior year audited financial statements.</span></div>
+      <div class="notice amber">
+        <span>&#9888;</span>
+        <span>Agree opening balances to prior year signed financial statements before entering. Differences must be documented.</span>
+      </div>
       <div class="fg c3">
-        <div class="field"><label class="lbl">Opening DTA (₹)</label><input class="inp mono" id="ob-dta" type="number" value="0" oninput="State.go()" placeholder="0"/><div class="hint">Non-current asset</div></div>
-        <div class="field"><label class="lbl">Opening DTL (₹)</label><input class="inp mono" id="ob-dtl" type="number" value="0" oninput="State.go()" placeholder="0"/><div class="hint">Non-current liability</div></div>
-        <div class="field"><label class="lbl">Opening MAT Credit (₹)</label><input class="inp mono" id="ob-mat" type="number" value="0" oninput="State.go()" placeholder="0"/><div class="hint">u/s 115JAA</div></div>
+        <div class="field">
+          <label class="lbl">Opening DTA (Rs)</label>
+          <input class="inp mono" id="ob-dta" type="number" value="0" oninput="State.go()"/>
+          <div class="hint">Per prior year balance sheet - Non-Current</div>
+        </div>
+        <div class="field">
+          <label class="lbl">Opening DTL (Rs)</label>
+          <input class="inp mono" id="ob-dtl" type="number" value="0" oninput="State.go()"/>
+          <div class="hint">Per prior year balance sheet - Non-Current</div>
+        </div>
+        <div class="field">
+          <label class="lbl">Opening MAT Credit (Rs)</label>
+          <input class="inp mono" id="ob-mat" type="number" value="0" oninput="State.go()"/>
+          <div class="hint">MAT credit entitlement u/s 115JAA</div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════
-     2. CURRENT TAX
-═══════════════════════════════════ -->
+<!-- 2. CURRENT TAX -->
 <section class="section" id="sec-current">
   <div class="pg-hdr">
-    <div><div class="pg-eyebrow">Step 2 of 8</div><div class="pg-title">Current Tax Computation</div><div class="pg-desc">Book profit to taxable income reconciliation.</div></div>
-    <div class="pg-actions"><button class="btn btn-primary" onclick="UI.compute()">▶ Compute</button></div>
+    <div>
+      <div class="pg-eye">Step 2 of 8</div>
+      <div class="pg-title">Current Tax Computation</div>
+      <div class="pg-desc">Book profit to taxable income. Enter all amounts as positive numbers.</div>
+    </div>
+    <div class="pg-acts"><button class="btn btn-primary" onclick="UI.compute()">&#9654; Compute</button></div>
   </div>
 
-  <div class="notice blue"><span class="ni">ℹ</span><div>Enter all amounts as <strong>positive numbers</strong>. Type (Add/Less) controls the calculation.</div></div>
+  <div class="notice blue">
+    <span>i</span>
+    <span>Type controls the sign automatically. <strong>Book</strong> = opening profit. <strong>Add</strong> = increases taxable income. <strong>Less</strong> = reduces taxable income.</span>
+  </div>
 
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci b">📊</div>Book Profit to Taxable Income</div><span class="badge badge-blue">Income Tax Act, 1961</span></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico b">&#128202;</div>Book Profit to Taxable Income</div>
+      <span class="badge badge-blue">Income Tax Act, 1961</span>
+    </div>
     <div class="card-body-f">
       <div class="tbl-wrap">
         <table class="wt">
-          <thead><tr><th style="width:32px">#</th><th style="width:80px">Type</th><th>Particulars</th><th class="r" style="width:190px">Amount (₹)</th><th style="width:32px"></th></tr></thead>
+          <thead>
+            <tr>
+              <th style="width:30px">#</th>
+              <th style="width:76px">Type</th>
+              <th>Particulars</th>
+              <th class="r" style="width:170px">Amount (Rs)</th>
+              <th style="width:28px"></th>
+            </tr>
+          </thead>
           <tbody id="ct-body"></tbody>
-          <tfoot><tr class="tot-row"><td colspan="3">Taxable Income / (Loss) for the Year</td><td class="r" id="ct-taxable-disp">-</td><td></td></tr></tfoot>
+          <tfoot>
+            <tr class="tot-row">
+              <td colspan="3">Taxable Income / (Loss) for the Year</td>
+              <td class="r" id="ct-taxable-disp">-</td>
+              <td></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
-      <button class="add-row-btn" onclick="State.addCT()"><span style="font-size:16px">+</span> Add line item</button>
+      <button class="add-row-btn" onclick="State.addCT()">+ Add line item</button>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci g">🧾</div>Current Tax Calculation</div></div>
+    <div class="card-hdr"><div class="card-title"><div class="cico g">&#9998;</div>Current Tax and Payment</div></div>
     <div class="card-body-f">
       <table class="wt">
-        <thead><tr><th>Particulars</th><th class="r" style="width:240px">Amount (₹)</th></tr></thead>
+        <thead>
+          <tr><th>Particulars</th><th class="r" style="width:230px">Amount (Rs)</th></tr>
+        </thead>
         <tbody>
           <tr><td>Taxable Income / (MAT Book Profit)</td><td class="r" id="ct2-ti">-</td></tr>
           <tr><td>Applicable Tax Rate</td><td class="r" id="ct2-rate">-</td></tr>
           <tr class="sub-row"><td><strong>Gross Tax Liability</strong></td><td class="r" id="ct2-tax">-</td></tr>
-          <tr><td>Less: MAT Credit Utilised u/s 115JAA (₹)</td>
-            <td class="r"><input class="ti r" id="ct-matutil" type="number" value="0" oninput="State.go()" style="width:180px" placeholder="0"/></td></tr>
-          <tr><td>Less: Advance Tax &amp; TDS (₹)</td>
-            <td class="r"><input class="ti r" id="ct-tds" type="number" value="0" oninput="State.go()" style="width:180px" placeholder="0"/></td></tr>
+          <tr>
+            <td>Less: MAT Credit Utilised u/s 115JAA (Rs)</td>
+            <td class="r"><input class="ti r" id="ct-matutil" type="number" value="0" oninput="State.go()" style="width:170px"/></td>
+          </tr>
+          <tr>
+            <td>Less: Advance Tax and TDS (Rs)</td>
+            <td class="r"><input class="ti r" id="ct-tds" type="number" value="0" oninput="State.go()" style="width:170px"/></td>
+          </tr>
         </tbody>
-        <tfoot><tr class="tot-row"><td>Net Current Tax Payable / (Refund)</td><td class="r" id="ct2-net">-</td></tr></tfoot>
+        <tfoot>
+          <tr class="tot-row"><td>Net Current Tax Payable / (Refund)</td><td class="r" id="ct2-net">-</td></tr>
+        </tfoot>
       </table>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════
-     3. DEFERRED TAX
-═══════════════════════════════════ -->
+<!-- 3. DEFERRED TAX -->
 <section class="section" id="sec-deferred">
   <div class="pg-hdr">
-    <div><div class="pg-eyebrow">Step 3 of 8</div><div class="pg-title">Deferred Tax Schedule</div><div class="pg-desc">Balance sheet approach per Ind AS 12.</div></div>
-    <div class="pg-actions"><button class="btn btn-primary" onclick="UI.compute()">▶ Compute</button></div>
+    <div>
+      <div class="pg-eye">Step 3 of 8</div>
+      <div class="pg-title">Deferred Tax Schedule</div>
+      <div class="pg-desc">Ind AS 12 balance sheet approach - temporary differences on each asset and liability.</div>
+    </div>
+    <div class="pg-acts"><button class="btn btn-primary" onclick="UI.compute()">&#9654; Compute</button></div>
   </div>
 
-  <div class="notice blue"><span class="ni">ℹ</span><div>
-    <strong>Temporary Difference = Carrying Amount (Books) - Tax Base (IT Act)</strong><br>
-    Assets: CA &gt; TB = <span class="pill pill-dtl">DTL</span> | CA &lt; TB = <span class="pill pill-dta">DTA</span><br>
-    Liabilities: CA &gt; TB = <span class="pill pill-dta">DTA</span> | CA &lt; TB = <span class="pill pill-dtl">DTL</span>
-  </div></div>
+  <div class="notice blue">
+    <span>i</span>
+    <div>
+      <strong>Ind AS 12 - Balance Sheet Approach</strong><br>
+      Temp Diff = Carrying Amount (Ind AS) - Tax Base (IT Act)<br>
+      Assets: CA &gt; TB = Taxable TD = <span class="pill pill-dtl">DTL</span> &nbsp;|&nbsp; CA &lt; TB = Deductible TD = <span class="pill pill-dta">DTA</span><br>
+      Liabilities: CA &gt; TB = Deductible TD = <span class="pill pill-dta">DTA</span> &nbsp;|&nbsp; CA &lt; TB = Taxable TD = <span class="pill pill-dtl">DTL</span>
+    </div>
+  </div>
 
   <!-- ASSETS -->
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci b">🏭</div>Section A - Temporary Differences: Assets <span class="badge badge-blue" style="margin-left:6px">Ind AS 12.16-17</span></div></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico b">&#127981;</div>Section A - Assets <span class="badge badge-blue" style="margin-left:6px">Ind AS 12.16-17</span></div>
+    </div>
     <div class="card-body-f">
       <div class="tbl-wrap">
         <table class="wt">
-          <thead><tr><th style="width:32px">#</th><th>Particulars / Asset</th><th class="r" style="width:145px">Carrying Amt (₹)<br><span style="font-weight:400;font-size:9.5px;text-transform:none">Ind AS / Books</span></th><th class="r" style="width:145px">Tax Base (₹)<br><span style="font-weight:400;font-size:9.5px;text-transform:none">Income Tax Act</span></th><th class="r" style="width:120px">Temp. Diff (₹)</th><th class="c" style="width:70px">Nature</th><th class="r" style="width:120px">Tax Effect (₹)</th><th style="width:32px"></th></tr></thead>
+          <thead>
+            <tr>
+              <th style="width:30px">#</th>
+              <th>Particulars</th>
+              <th class="r" style="width:135px">Carrying Amt (Rs)<br><span style="font-weight:400;text-transform:none;font-size:9px">Ind AS / Books</span></th>
+              <th class="r" style="width:135px">Tax Base (Rs)<br><span style="font-weight:400;text-transform:none;font-size:9px">Income Tax Act</span></th>
+              <th class="r" style="width:115px">Temp Diff (Rs)</th>
+              <th class="c" style="width:65px">Nature</th>
+              <th class="r" style="width:115px">Tax Effect (Rs)</th>
+              <th style="width:28px"></th>
+            </tr>
+          </thead>
           <tbody id="dt-asset-body"></tbody>
           <tfoot>
             <tr class="sub-row"><td colspan="5">Total DTA from Asset Differences</td><td></td><td class="r" id="dt-a-dta">-</td><td></td></tr>
@@ -191,17 +295,30 @@
           </tfoot>
         </table>
       </div>
-      <button class="add-row-btn" onclick="State.addDT('asset')"><span style="font-size:16px">+</span> Add asset</button>
+      <button class="add-row-btn" onclick="State.addDT('asset')">+ Add asset</button>
     </div>
   </div>
 
   <!-- LIABILITIES -->
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci r">📋</div>Section B - Temporary Differences: Liabilities &amp; Provisions <span class="badge badge-blue" style="margin-left:6px">Ind AS 12.15</span></div></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico r">&#128203;</div>Section B - Liabilities &amp; Provisions <span class="badge badge-blue" style="margin-left:6px">Ind AS 12.15</span></div>
+    </div>
     <div class="card-body-f">
       <div class="tbl-wrap">
         <table class="wt">
-          <thead><tr><th style="width:32px">#</th><th>Particulars / Liability</th><th class="r" style="width:145px">Carrying Amt (₹)<br><span style="font-weight:400;font-size:9.5px;text-transform:none">Ind AS / Books</span></th><th class="r" style="width:145px">Tax Base (₹)<br><span style="font-weight:400;font-size:9.5px;text-transform:none">Income Tax Act</span></th><th class="r" style="width:120px">Temp. Diff (₹)</th><th class="c" style="width:70px">Nature</th><th class="r" style="width:120px">Tax Effect (₹)</th><th style="width:32px"></th></tr></thead>
+          <thead>
+            <tr>
+              <th style="width:30px">#</th>
+              <th>Particulars</th>
+              <th class="r" style="width:135px">Carrying Amt (Rs)<br><span style="font-weight:400;text-transform:none;font-size:9px">Ind AS / Books</span></th>
+              <th class="r" style="width:135px">Tax Base (Rs)<br><span style="font-weight:400;text-transform:none;font-size:9px">Income Tax Act</span></th>
+              <th class="r" style="width:115px">Temp Diff (Rs)</th>
+              <th class="c" style="width:65px">Nature</th>
+              <th class="r" style="width:115px">Tax Effect (Rs)</th>
+              <th style="width:28px"></th>
+            </tr>
+          </thead>
           <tbody id="dt-liab-body"></tbody>
           <tfoot>
             <tr class="sub-row"><td colspan="5">Total DTA from Liability Differences</td><td></td><td class="r" id="dt-l-dta">-</td><td></td></tr>
@@ -209,17 +326,28 @@
           </tfoot>
         </table>
       </div>
-      <button class="add-row-btn" onclick="State.addDT('liab')"><span style="font-size:16px">+</span> Add liability</button>
+      <button class="add-row-btn" onclick="State.addDT('liab')">+ Add liability</button>
     </div>
   </div>
 
   <!-- OTHER -->
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci p">📎</div>Section C - Other Deferred Items <span class="badge badge-blue" style="margin-left:6px">Losses / MAT Credit</span></div></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico p">&#128204;</div>Section C - Other Items <span class="badge badge-blue" style="margin-left:6px">Losses / MAT Credit</span></div>
+    </div>
     <div class="card-body-f">
       <div class="tbl-wrap">
         <table class="wt">
-          <thead><tr><th style="width:32px">#</th><th>Particulars</th><th class="r" style="width:170px">Amount / Base (₹)</th><th class="c" style="width:90px">Type</th><th class="r" style="width:140px">Tax Effect (₹)</th><th style="width:32px"></th></tr></thead>
+          <thead>
+            <tr>
+              <th style="width:30px">#</th>
+              <th>Particulars</th>
+              <th class="r" style="width:155px">Amount (Rs)</th>
+              <th class="c" style="width:85px">Type</th>
+              <th class="r" style="width:125px">Tax Effect (Rs)</th>
+              <th style="width:28px"></th>
+            </tr>
+          </thead>
           <tbody id="dt-other-body"></tbody>
           <tfoot>
             <tr class="sub-row"><td colspan="3">Total DTA - Other Items</td><td></td><td class="r" id="dt-o-dta">-</td><td></td></tr>
@@ -227,51 +355,55 @@
           </tfoot>
         </table>
       </div>
-      <button class="add-row-btn" onclick="State.addOther()"><span style="font-size:16px">+</span> Add item</button>
+      <button class="add-row-btn" onclick="State.addOther()">+ Add item</button>
     </div>
   </div>
 
   <!-- CONSOLIDATED -->
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci a">Σ</div>Consolidated Deferred Tax Position</div></div>
+    <div class="card-hdr"><div class="card-title"><div class="cico a">&#931;</div>Consolidated Position</div></div>
     <div class="card-body-f">
       <table class="wt">
-        <thead><tr><th>Particulars</th><th class="r">Gross DTA (₹)</th><th class="r">Gross DTL (₹)</th></tr></thead>
+        <thead><tr><th>Particulars</th><th class="r">Gross DTA (Rs)</th><th class="r">Gross DTL (Rs)</th></tr></thead>
         <tbody>
-          <tr><td>Asset temporary differences (Section A)</td><td class="r" id="dt-a-dta-2">-</td><td class="r" id="dt-a-dtl-2">-</td></tr>
-          <tr><td>Liability temporary differences (Section B)</td><td class="r" id="dt-l-dta-2">-</td><td class="r" id="dt-l-dtl-2">-</td></tr>
-          <tr><td>Losses / MAT credit / Other (Section C)</td><td class="r" id="dt-o-dta-2">-</td><td class="r" id="dt-o-dtl-2">-</td></tr>
+          <tr><td>From asset differences (Section A)</td><td class="r" id="dt-a-dta-2">-</td><td class="r" id="dt-a-dtl-2">-</td></tr>
+          <tr><td>From liability differences (Section B)</td><td class="r" id="dt-l-dta-2">-</td><td class="r" id="dt-l-dtl-2">-</td></tr>
+          <tr><td>From other items (Section C)</td><td class="r" id="dt-o-dta-2">-</td><td class="r" id="dt-o-dtl-2">-</td></tr>
         </tbody>
         <tfoot>
           <tr class="tot-row"><td>Total Gross DTA / DTL</td><td class="r" id="dt-tot-dta">-</td><td class="r" id="dt-tot-dtl">-</td></tr>
-          <tr class="sub-row"><td colspan="2"><strong>Net Deferred Tax P&amp;L Impact (Charge) / Credit</strong></td><td class="r" id="dt-pl">-</td></tr>
+          <tr class="sub-row"><td colspan="2"><strong>Net Deferred Tax P&amp;L Impact</strong></td><td class="r" id="dt-pl">-</td></tr>
         </tfoot>
       </table>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════
-     4. MOVEMENT
-═══════════════════════════════════ -->
+<!-- 4. MOVEMENT -->
 <section class="section" id="sec-movement">
   <div class="pg-hdr">
-    <div><div class="pg-eyebrow">Step 4 of 8</div><div class="pg-title">DTA / DTL Movement Schedule</div><div class="pg-desc">Opening to closing balance sheet positions.</div></div>
+    <div>
+      <div class="pg-eye">Step 4 of 8</div>
+      <div class="pg-title">DTA / DTL Movement Schedule</div>
+      <div class="pg-desc">Opening to closing balance sheet positions for the year.</div>
+    </div>
   </div>
 
   <div class="two-col">
     <div class="card">
-      <div class="card-hdr"><div class="card-title"><div class="ci g">↗</div>Deferred Tax Asset - Movement</div></div>
+      <div class="card-hdr"><div class="card-title"><div class="cico g">&#8599;</div>Deferred Tax Asset - Movement</div></div>
       <div class="card-body-f">
         <table class="wt">
-          <thead><tr><th>Particulars</th><th class="r">₹</th></tr></thead>
+          <thead><tr><th>Particulars</th><th class="r">Rs</th></tr></thead>
           <tbody>
-            <tr><td>Opening DTA (prior year audited FS)</td><td class="r" id="mv-dta-open">-</td></tr>
+            <tr><td>Opening DTA (per prior year FS)</td><td class="r" id="mv-dta-open">-</td></tr>
             <tr><td>Add: DTA recognised during the year</td><td class="r" id="mv-dta-cy">-</td></tr>
             <tr><td>Less: DTA reversed / utilised</td><td class="r" style="color:var(--red)">-</td></tr>
-            <tr><td>Add: MAT Credit Entitlement this year (₹)</td>
-              <td class="r"><input class="ti r" id="mv-mat-new" type="number" value="0" oninput="State.go()" style="width:140px" placeholder="0"/></td></tr>
-            <tr><td>Less: MAT Credit utilised</td><td class="r" style="color:var(--red)" id="mv-mat-util-disp">-</td></tr>
+            <tr>
+              <td>Add: MAT Credit Entitlement this year (Rs)<div class="hint">Enter new MAT credit recognised</div></td>
+              <td class="r"><input class="ti r" id="mv-mat-new" type="number" value="0" oninput="State.go()" style="width:130px"/></td>
+            </tr>
+            <tr><td>Less: MAT Credit utilised this year</td><td class="r" style="color:var(--red)" id="mv-mat-util">-</td></tr>
           </tbody>
           <tfoot><tr class="tot-row"><td>Closing DTA (to Balance Sheet)</td><td class="r" id="mv-dta-close">-</td></tr></tfoot>
         </table>
@@ -279,12 +411,12 @@
     </div>
 
     <div class="card">
-      <div class="card-hdr"><div class="card-title"><div class="ci r">↘</div>Deferred Tax Liability - Movement</div></div>
+      <div class="card-hdr"><div class="card-title"><div class="cico r">&#8600;</div>Deferred Tax Liability - Movement</div></div>
       <div class="card-body-f">
         <table class="wt">
-          <thead><tr><th>Particulars</th><th class="r">₹</th></tr></thead>
+          <thead><tr><th>Particulars</th><th class="r">Rs</th></tr></thead>
           <tbody>
-            <tr><td>Opening DTL (prior year audited FS)</td><td class="r" id="mv-dtl-open">-</td></tr>
+            <tr><td>Opening DTL (per prior year FS)</td><td class="r" id="mv-dtl-open">-</td></tr>
             <tr><td>Add: DTL created during the year</td><td class="r" id="mv-dtl-cy">-</td></tr>
             <tr><td>Less: DTL reversed during the year</td><td class="r" style="color:var(--green)">-</td></tr>
           </tbody>
@@ -295,14 +427,16 @@
   </div>
 
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci p">💳</div>MAT Credit Entitlement - Movement <span class="badge badge-blue" style="margin-left:8px">Sec 115JAA / 115JD</span></div></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico p">&#128179;</div>MAT Credit Movement <span class="badge badge-blue" style="margin-left:8px">Sec 115JAA / 115JD</span></div>
+    </div>
     <div class="card-body-f">
       <table class="wt">
-        <thead><tr><th>Particulars</th><th class="r">₹</th></tr></thead>
+        <thead><tr><th>Particulars</th><th class="r">Rs</th></tr></thead>
         <tbody>
-          <tr><td>Opening MAT Credit (prior year)</td><td class="r" id="mv-mat-open">-</td></tr>
-          <tr><td>Add: MAT Credit recognised this year</td><td class="r" id="mv-mat-new-disp">-</td></tr>
-          <tr><td>Less: MAT Credit utilised (set off vs normal tax)</td><td class="r" id="mv-mat-util-disp">-</td></tr>
+          <tr><td>Opening MAT Credit (per prior year)</td><td class="r" id="mv-mat-open">-</td></tr>
+          <tr><td>Add: MAT Credit recognised this year</td><td class="r" id="mv-mat-add">-</td></tr>
+          <tr><td>Less: MAT Credit utilised this year</td><td class="r" id="mv-mat-util">-</td></tr>
         </tbody>
         <tfoot><tr class="tot-row"><td>Closing MAT Credit (to Balance Sheet)</td><td class="r" id="mv-mat-close">-</td></tr></tfoot>
       </table>
@@ -310,79 +444,94 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════
-     5. SUMMARY & JE
-═══════════════════════════════════ -->
+<!-- 5. SUMMARY & JE -->
 <section class="section" id="sec-summary">
   <div class="pg-hdr">
-    <div><div class="pg-eyebrow">Step 5 of 8</div><div class="pg-title">Summary &amp; Journal Entries</div><div class="pg-desc">Final provision figures and double-entry accounting entries.</div></div>
-    <div class="pg-actions"><button class="btn btn-primary" onclick="UI.compute()">▶ Compute</button></div>
+    <div>
+      <div class="pg-eye">Step 5 of 8</div>
+      <div class="pg-title">Summary &amp; Journal Entries</div>
+      <div class="pg-desc">Final provision figures and double-entry accounting entries.</div>
+    </div>
+    <div class="pg-acts"><button class="btn btn-primary" onclick="UI.compute()">&#9654; Compute</button></div>
   </div>
 
   <div class="kpi-grid">
-    <div class="kpi blue"><div class="kpi-icon">💰</div><div class="kpi-lbl">Current Tax</div><div class="kpi-val" id="kpi-ct">₹0</div><div class="kpi-sub">P&amp;L charge — current year</div></div>
-    <div class="kpi red" id="kpi-dt-card"><div class="kpi-icon">📈</div><div class="kpi-lbl">Deferred Tax (Net)</div><div class="kpi-val" id="kpi-dt">₹0</div><div class="kpi-sub" id="kpi-dt-sub">charge / (credit)</div></div>
-    <div class="kpi amber"><div class="kpi-icon">Σ</div><div class="kpi-lbl">Total Tax Expense</div><div class="kpi-val" id="kpi-total">₹0</div><div class="kpi-sub">P&amp;L — income tax expense</div></div>
-    <div class="kpi purple"><div class="kpi-icon">%</div><div class="kpi-lbl">Effective Tax Rate</div><div class="kpi-val" id="kpi-etr">—%</div><div class="kpi-sub" id="kpi-etr-var">vs statutory</div></div>
+    <div class="kpi blue"><div class="kpi-icon">&#128176;</div><div class="kpi-lbl">Current Tax</div><div class="kpi-val" id="kpi-ct">0</div><div class="kpi-sub">P&amp;L charge - current year</div></div>
+    <div class="kpi red" id="kpi-dt-card"><div class="kpi-icon">&#128200;</div><div class="kpi-lbl">Deferred Tax</div><div class="kpi-val" id="kpi-dt">0</div><div class="kpi-sub" id="kpi-dt-sub">charge / (credit)</div></div>
+    <div class="kpi amber"><div class="kpi-icon">&#931;</div><div class="kpi-lbl">Total Tax Expense</div><div class="kpi-val" id="kpi-total">0</div><div class="kpi-sub">P&amp;L - income tax expense</div></div>
+    <div class="kpi purple"><div class="kpi-icon">%</div><div class="kpi-lbl">Effective Tax Rate</div><div class="kpi-val" id="kpi-etr">-%</div><div class="kpi-sub" id="kpi-etr-var">vs statutory</div></div>
   </div>
-  <div class="two-col" style="margin-bottom:18px">
-    <div class="kpi green" style="margin-bottom:0"><div class="kpi-lbl">Closing DTA (Balance Sheet)</div><div class="kpi-val" id="kpi-dta">₹0</div><div class="kpi-sub">Non-current asset</div></div>
-    <div class="kpi red" style="margin-bottom:0"><div class="kpi-lbl">Closing DTL (Balance Sheet)</div><div class="kpi-val" id="kpi-dtl">₹0</div><div class="kpi-sub">Non-current liability</div></div>
+
+  <div class="two-col" style="margin-bottom:16px">
+    <div class="kpi green" style="margin-bottom:0"><div class="kpi-lbl">Closing DTA</div><div class="kpi-val" id="kpi-dta">0</div><div class="kpi-sub">Non-current asset - Balance Sheet</div></div>
+    <div class="kpi red" style="margin-bottom:0"><div class="kpi-lbl">Closing DTL</div><div class="kpi-val" id="kpi-dtl">0</div><div class="kpi-sub">Non-current liability - Balance Sheet</div></div>
   </div>
 
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci b">📝</div>Journal Entry 1 - Current Tax Provision</div></div>
-    <div class="card-body"><div class="je" id="je-ct"><div class="je-narr">Click ▶ Compute to generate.</div></div></div>
+    <div class="card-hdr"><div class="card-title"><div class="cico b">&#128221;</div>Journal Entry 1 - Current Tax</div></div>
+    <div class="card-body"><div class="je" id="je-ct"><div class="je-narr">Click Compute to generate.</div></div></div>
   </div>
+
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci g">📝</div>Journal Entry 2 - Deferred Tax (Ind AS 12)</div></div>
-    <div class="card-body"><div class="je" id="je-dt"><div class="je-narr">Click ▶ Compute to generate.</div></div></div>
+    <div class="card-hdr"><div class="card-title"><div class="cico g">&#128221;</div>Journal Entry 2 - Deferred Tax (Ind AS 12)</div></div>
+    <div class="card-body"><div class="je" id="je-dt"><div class="je-narr">Click Compute to generate.</div></div></div>
   </div>
+
   <div class="card" id="je-mat-card" style="display:none">
-    <div class="card-hdr"><div class="card-title"><div class="ci p">📝</div>Journal Entry 3 - MAT Credit Entitlement</div></div>
+    <div class="card-hdr"><div class="card-title"><div class="cico p">&#128221;</div>Journal Entry 3 - MAT Credit Entitlement</div></div>
     <div class="card-body"><div class="je" id="je-mat"><div class="je-narr">Enter MAT credit in Movement tab.</div></div></div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════
-     6. ETR RECONCILIATION
-═══════════════════════════════════ -->
+<!-- 6. ETR -->
 <section class="section" id="sec-etr">
   <div class="pg-hdr">
-    <div><div class="pg-eyebrow">Step 6 of 8</div><div class="pg-title">ETR Reconciliation</div><div class="pg-desc">Effective tax rate vs statutory rate per Ind AS 12.81(c).</div></div>
-    <div class="pg-actions"><button class="btn btn-primary" onclick="UI.compute()">▶ Compute</button></div>
+    <div>
+      <div class="pg-eye">Step 6 of 8</div>
+      <div class="pg-title">ETR Reconciliation</div>
+      <div class="pg-desc">Mandatory disclosure per Ind AS 12.81(c).</div>
+    </div>
+    <div class="pg-acts"><button class="btn btn-primary" onclick="UI.compute()">&#9654; Compute</button></div>
   </div>
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci a">%</div>Effective Tax Rate Reconciliation <span class="badge badge-blue" style="margin-left:6px">Ind AS 12.81(c)</span></div></div>
-    <div class="card-body-f" id="etr-tbl"><div style="padding:20px;color:var(--ink-4)">Click ▶ Compute to generate.</div></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico a">%</div>Effective Tax Rate Reconciliation <span class="badge badge-blue" style="margin-left:6px">Ind AS 12.81(c)</span></div>
+    </div>
+    <div class="card-body-f" id="etr-tbl"><div style="padding:18px;color:var(--ink-4)">Click Compute to generate.</div></div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════
-     7. DISCLOSURE NOTE
-═══════════════════════════════════ -->
+<!-- 7. DISCLOSURE -->
 <section class="section" id="sec-disclosure">
   <div class="pg-hdr">
-    <div><div class="pg-eyebrow">Step 7 of 8</div><div class="pg-title">Ind AS 12 Disclosure Note</div><div class="pg-desc">Draft note for financial statements per Ind AS 12.79-88.</div></div>
-    <div class="pg-actions"><button class="btn btn-primary" onclick="UI.compute()">▶ Compute</button></div>
+    <div>
+      <div class="pg-eye">Step 7 of 8</div>
+      <div class="pg-title">Ind AS 12 Disclosure Note</div>
+      <div class="pg-desc">Draft note for Notes to Accounts per Ind AS 12.79-88.</div>
+    </div>
+    <div class="pg-acts"><button class="btn btn-primary" onclick="UI.compute()">&#9654; Compute</button></div>
   </div>
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci b">📄</div>Note - Income Taxes <span class="badge badge-blue" style="margin-left:6px">Ind AS 12.79</span></div></div>
-    <div class="card-body" id="disclosure-note"><div style="color:var(--ink-4)">Click ▶ Compute to generate.</div></div>
+    <div class="card-hdr">
+      <div class="card-title"><div class="cico b">&#128196;</div>Note - Income Taxes <span class="badge badge-blue" style="margin-left:6px">Ind AS 12.79</span></div>
+    </div>
+    <div class="card-body" id="disclosure-note"><div style="color:var(--ink-4)">Click Compute to generate.</div></div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════
-     8. AUDITOR CHECKLIST
-═══════════════════════════════════ -->
+<!-- 8. CHECKLIST -->
 <section class="section" id="sec-checklist">
   <div class="pg-hdr">
-    <div><div class="pg-eyebrow">Step 8 of 8</div><div class="pg-title">Auditor's Quality Control Checklist</div><div class="pg-desc">Ind AS 12 compliance review checklist.</div></div>
-    <div class="pg-actions"><button class="btn btn-primary" onclick="UI.compute()">▶ Compute</button></div>
+    <div>
+      <div class="pg-eye">Step 8 of 8</div>
+      <div class="pg-title">Auditor QC Checklist</div>
+      <div class="pg-desc">Quality control per SA 500 series and Ind AS 12 compliance requirements.</div>
+    </div>
+    <div class="pg-acts"><button class="btn btn-primary" onclick="UI.compute()">&#9654; Compute</button></div>
   </div>
   <div class="card">
-    <div class="card-hdr"><div class="card-title"><div class="ci g">✓</div>Deferred Tax - QC Checklist</div></div>
-    <div class="card-body-f" id="checklist-wrap"><div style="padding:20px;color:var(--ink-4)">Click ▶ Compute to run checklist.</div></div>
+    <div class="card-hdr"><div class="card-title"><div class="cico g">&#10003;</div>Deferred Tax - QC Checklist</div></div>
+    <div class="card-body-f" id="checklist-wrap"><div style="padding:18px;color:var(--ink-4)">Click Compute to run checklist.</div></div>
   </div>
 </section>
 
@@ -393,18 +542,19 @@
 
 <script src="js/compute.js"></script>
 <script src="js/state.js"></script>
-<script src="js/excel.js"></script>
-<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded',()=>{
-  /* Mirror consolidated DT totals */
-  const orig=Compute.run.bind(Compute);
-  Compute.run=function(s){
-    const r=orig(s);
-    [['dt-a-dta','dt-a-dta-2'],['dt-a-dtl','dt-a-dtl-2'],['dt-l-dta','dt-l-dta-2'],
-     ['dt-l-dtl','dt-l-dtl-2'],['dt-o-dta','dt-o-dta-2'],['dt-o-dtl','dt-o-dtl-2']].forEach(([a,b])=>{
-      const ea=document.getElementById(a),eb=document.getElementById(b);
-      if(ea&&eb) eb.textContent=ea.textContent;
+document.addEventListener('DOMContentLoaded', () => {
+  /* Mirror consolidated table IDs */
+  const orig = Compute.run.bind(Compute);
+  Compute.run = function(s) {
+    const r = orig(s);
+    [['dt-a-dta','dt-a-dta-2'],['dt-a-dtl','dt-a-dtl-2'],
+     ['dt-l-dta','dt-l-dta-2'],['dt-l-dtl','dt-l-dtl-2'],
+     ['dt-o-dta','dt-o-dta-2'],['dt-o-dtl','dt-o-dtl-2']
+    ].forEach(([a, b]) => {
+      const ea = document.getElementById(a), eb = document.getElementById(b);
+      if (ea && eb) eb.textContent = ea.textContent;
     });
     return r;
   };

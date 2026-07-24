@@ -23,10 +23,10 @@ const UI = (() => {
   /* ── TOAST ── */
   function toast(msg, type='info', dur=3000){
     const wrap=$('toast-wrap'); if(!wrap) return;
-    const icons={ok:'✓',err:'✗',info:'ℹ'};
+    const icons={ok:'SUCCESS',err:'ERROR',info:'INFO'};
     const t=document.createElement('div');
     t.className='toast '+type;
-    t.innerHTML=`<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+    t.innerHTML=`<span style="font-weight:700;font-size:10px">${icons[type]||'INFO'}</span><span>${msg}</span>`;
     wrap.appendChild(t);
     setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(8px)'; t.style.transition='all .22s'; setTimeout(()=>t.remove(),220); }, dur);
   }
