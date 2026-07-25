@@ -1,104 +1,123 @@
 /* ============================================================
-   ADMIN.CSS — Console
-   Same system as the workpaper, with a top tab bar instead of a
-   step sidebar, because administration is browsing not sequence.
+   ADMIN.CSS — Admin panel
+   Inherits base.css. Additional admin-specific components.
    ============================================================ */
 
-body.admin { background: var(--paper); min-height: 100vh; }
-
-.a-top {
-  position: sticky; top: 0; z-index: 100;
-  background: var(--ink-900);
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 0 18px; height: var(--hh);
-}
-.a-top-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.a-title { font-size: 12.5px; font-weight: 600; color: #fff; }
-.a-title span { display: block; font-size: 10px; color: rgba(255,255,255,.42); letter-spacing: .05em; text-transform: uppercase; }
-
-.a-tabs {
-  position: sticky; top: var(--hh); z-index: 90;
-  background: var(--card); border-bottom: 1px solid var(--rule);
-  display: flex; gap: 2px; padding: 0 18px; overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.a-tab {
-  padding: 12px 14px; background: none; border: none;
-  border-bottom: 2px solid transparent;
-  font-size: var(--fs-sm); font-weight: 600; color: var(--ink-500);
-  cursor: pointer; white-space: nowrap;
-  transition: color var(--ease-2), border-color var(--ease-2), background var(--ease-2);
-  border-radius: var(--r-sm) var(--r-sm) 0 0;
-}
-.a-tab:hover { color: var(--ink-900); background: var(--paper-2); }
-.a-tab[aria-selected="true"] { color: var(--indigo-600); border-bottom-color: var(--indigo-600); }
-.a-tab-count {
-  display: inline-block; margin-left: 6px; padding: 0 6px;
-  background: var(--paper-2); border-radius: 9px;
-  font-family: var(--mono); font-size: 9.5px; color: var(--ink-500);
+body.admin-page {
+  overflow: hidden;
 }
 
-.a-body { max-width: 1180px; margin: 0 auto; padding: 24px 18px 80px; }
-.a-pane { display: none; }
-.a-pane.on { display: block; animation: step-in 180ms ease-out; }
-
-.a-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-
-/* Stat strip */
-.a-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 22px; }
-.a-stat {
-  background: var(--card); border: 1px solid var(--rule); border-radius: var(--r); padding: 13px 15px;
-  box-shadow: var(--sh-1); transition: transform var(--ease-2), box-shadow var(--ease-2);
-  animation: rise-in 340ms var(--ease-out) both;
+/* Admin uses same shell as app */
+.admin-shell {
+  position: fixed; inset: var(--hh) 0 0 0;
+  display: grid; grid-template-columns: var(--sw) minmax(0, 1fr);
 }
-.a-stat:hover { transform: translateY(-2px); box-shadow: var(--sh-2); }
-.a-stat-l { font-size: var(--fs-xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-400); }
-.a-stat-v { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--ink-900); margin-top: 4px; letter-spacing: -.02em; }
-.a-stat-s { font-size: var(--fs-xs); color: var(--ink-500); margin-top: 2px; }
 
-/* Row of filters above a table */
-.a-filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-.a-filters .inp { max-width: 260px; text-align: left; }
+/* Admin sidebar */
+.admin-side {
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.admin-side-scroll { flex: 1 1 auto; overflow-y: auto; padding: 10px 8px; }
+.admin-main { overflow-y: auto; padding: 28px 32px 80px; }
+.admin-sheet { max-width: 960px; margin: 0 auto; }
 
-/* User cell */
-.u-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.u-name { font-weight: 600; color: var(--ink-900); }
-.u-mail { font-size: var(--fs-xs); color: var(--ink-400); word-break: break-all; }
-.u-you { font-size: var(--fs-xs); color: var(--indigo-600); font-weight: 600; }
+/* Stat cards */
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+.stat {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 18px 20px;
+  box-shadow: var(--sh-xs); position: relative; overflow: hidden;
+  animation: rise-in 360ms var(--ease-out) both;
+  transition: box-shadow var(--ease-out), transform var(--ease-out);
+}
+.stat:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.stat::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--indigo-600), var(--indigo-400));
+}
+.stat-lbl { font-family: var(--mono); font-size: var(--fs-2xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-400); margin-bottom: 9px; }
+.stat-val { font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--ink-900); letter-spacing: -.05em; line-height: 1; }
+.stat-sub { font-size: var(--fs-xs); color: var(--ink-400); margin-top: 6px; }
 
-.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
-.dot-active { background: var(--dta); }
-.dot-suspended { background: var(--ink-300); }
-.dot-locked { background: var(--dtl); }
+/* User table */
+.user-row td { vertical-align: middle; }
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--indigo-500), var(--indigo-700));
+  color: #fff; display: grid; place-items: center;
+  font-size: var(--fs-xs); font-weight: 700; flex: none; letter-spacing: .03em;
+}
+.role-select { font-size: var(--fs-xs); }
+
+/* Rate cards */
+.rate-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 20px; margin-bottom: 14px;
+  box-shadow: var(--sh-xs); animation: rise-in 300ms var(--ease-out) both;
+  transition: box-shadow var(--ease-out);
+}
+.rate-card:hover { box-shadow: var(--sh-sm); }
+.rate-hdr { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.rate-name { font-size: var(--fs-md); font-weight: 700; color: var(--ink-900); }
+.rate-pct { font-family: var(--mono); font-size: var(--fs-xl); font-weight: 700; color: var(--indigo-600); }
 
 /* Log */
-.log-row { display: grid; grid-template-columns: 148px 132px 1fr; gap: 12px; padding: 9px 14px; border-bottom: 1px solid var(--rule-3); font-size: var(--fs-sm); align-items: baseline; }
-.log-row:hover { background: var(--paper); }
-.log-ts { font-family: var(--mono); font-size: var(--fs-xs); color: var(--ink-400); }
-.log-who { font-weight: 600; color: var(--ink-700); overflow: hidden; text-overflow: ellipsis; }
-.log-what { color: var(--ink-600); }
-.log-what b { color: var(--ink-900); font-weight: 600; }
-@media (max-width: 720px) {
-  .log-row { grid-template-columns: 1fr; gap: 2px; }
+.log-entry { display: flex; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border-3); align-items: flex-start; font-size: var(--fs-sm); }
+.log-time { font-family: var(--mono); font-size: var(--fs-xs); color: var(--ink-400); white-space: nowrap; padding-top: 2px; flex: none; min-width: 110px; }
+.log-user { font-weight: 600; color: var(--ink-800); }
+.log-action { color: var(--ink-500); }
+.log-what { color: var(--ink-700); }
+
+/* Admin tabs */
+.admin-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.admin-tab {
+  padding: 9px 16px; background: none; border: none;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  font-size: var(--fs-sm); font-weight: 600; color: var(--ink-500);
+  cursor: pointer; white-space: nowrap;
+  transition: color var(--ease), border-color var(--ease);
+}
+.admin-tab:hover { color: var(--ink-800); }
+.admin-tab[aria-selected="true"] { color: var(--indigo-600); border-bottom-color: var(--indigo-600); }
+
+@media (max-width: 760px) {
+  .stat-grid { grid-template-columns: 1fr; }
+  .admin-main { padding: 16px 16px 60px; }
 }
 
-/* Danger zone */
-.danger-zone { border-color: var(--dtl-bd); }
-.danger-zone .card-hdr { background: var(--dtl-bg); border-bottom-color: var(--dtl-bd); }
-.danger-zone .card-title { color: var(--dtl); }
-.dz-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--rule-2); flex-wrap: wrap; }
-.dz-row:last-child { border-bottom: none; padding-bottom: 0; }
-.dz-row p { font-size: var(--fs-sm); color: var(--ink-500); margin-top: 3px; max-width: 60ch; }
-
-.temp-pw {
-  font-family: var(--mono); font-size: 17px; font-weight: 600;
-  letter-spacing: .02em; color: var(--ink-900);
-  background: var(--paper-2); border: 1px dashed var(--rule);
-  padding: 14px; border-radius: var(--r); text-align: center; margin: 14px 0;
-  -webkit-user-select: all; user-select: all;
+/* ── Admin-specific header ── */
+.a-top {
+  position: fixed; inset: 0 0 auto 0;
+  height: var(--hh); z-index: 900;
+  background: linear-gradient(180deg, #1a2744 0%, #111827 100%);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 0 16px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.06), 0 2px 20px rgba(10,14,20,.22);
 }
-
-@media (max-width: 700px) {
-  .a-body { padding: 18px 12px 70px; }
-  .tbl-scroll table.wt { min-width: 640px; }
+.a-top-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.a-title {
+  font-size: var(--fs-sm); font-weight: 700; color: #fff;
+  display: flex; align-items: center; gap: 8px;
+  letter-spacing: -.01em;
 }
+.a-title span {
+  font-size: var(--fs-xs); font-weight: 400;
+  color: rgba(255,255,255,.42); padding-left: 8px;
+  border-left: 1px solid rgba(255,255,255,.14);
+}
+.a-body {
+  position: fixed; inset: var(--hh) 0 0 0;
+  display: grid; grid-template-columns: var(--sw) minmax(0, 1fr);
+  overflow: hidden;
+}
+.a-side {
+  background: var(--card); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.a-side-scroll { flex: 1 1 auto; overflow-y: auto; padding: 10px 8px; }
+.a-main { overflow-y: auto; overflow-x: hidden; padding: 26px 32px 80px; }
+.a-sheet { max-width: 1000px; margin: 0 auto; }
+.a-tab-body { display: none; }
+.a-tab-body.on { display: block; animation: rise-in 260ms var(--ease-out); }

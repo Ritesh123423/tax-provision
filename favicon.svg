@@ -1,10 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="13" fill="#131a22"/>
-  <!-- The identity the tool rests on: carrying amount over tax base, ruled off -->
-  <rect x="14" y="17" width="36" height="3.4" rx="1.7" fill="#2e4e9e"/>
-  <rect x="14" y="26" width="24" height="3.4" rx="1.7" fill="#5a6673"/>
-  <rect x="14" y="34.5" width="36" height="1.6" fill="#7d8896"/>
-  <!-- the tick -->
-  <path d="M16 45.5l6.5 7L48 42" fill="none" stroke="#34c97b" stroke-width="4.4"
-        stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#2563eb"/>
+  <rect x="0" y="0" width="32" height="32" rx="7" fill="url(#g)"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <text x="16" y="22" font-family="'JetBrains Mono',monospace" font-size="13" font-weight="700" fill="white" text-anchor="middle" letter-spacing="0.5">KGS</text>
 </svg>
