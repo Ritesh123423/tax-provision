@@ -169,13 +169,10 @@ const Store = (() => {
   /* ---------------- Users ---------------- */
 
   const ROLES = {
-    partner: { label: 'Partner',  rank: 0, blurb: 'Full access. Signs off workpapers. Manages team and settings.' },
-    manager: { label: 'Manager',  rank: 1, blurb: 'Create, edit and review all engagements. Cannot change firm settings.' },
-    article: { label: 'Article',  rank: 2, blurb: 'Create and edit their own assigned engagements.' },
-  },
-    manager:  { label: 'Manager',       rank: 3, blurb: 'Prepare and review any engagement, and sign off.' },
-    preparer: { label: 'Preparer',      rank: 2, blurb: 'Create and edit engagements assigned to them.' },
-    viewer:   { label: 'Read only',     rank: 1, blurb: 'View and export. No edits.' }
+    partner: { label: 'Partner',  rank: 4, blurb: 'Full access. Signs off workpapers. Manages team and settings.' },
+    manager: { label: 'Manager',  rank: 3, blurb: 'Prepare and review any engagement, and sign off.' },
+    preparer: { label: 'Preparer', rank: 2, blurb: 'Create and edit engagements assigned to them.' },
+    viewer: { label: 'Read only', rank: 1, blurb: 'View and export. No edits.' }
   };
 
   const users = () => load().users;
@@ -214,7 +211,7 @@ const Store = (() => {
     // lives in the store itself so no call site (present or future) can
     // route around it via a stale render.
     const u = userById(id);
-    if (u && u.role === 'admin' && u.status === 'active' && adminCount() <= 1) {
+    if (u && u.role === 'partner' && u.status === 'active' && adminCount() <= 1) {
       return { ok: false, error: 'This is the only active administrator. Promote someone else first.' };
     }
     commit(db => {
@@ -228,7 +225,7 @@ const Store = (() => {
     return { ok: true };
   }
 
-  const adminCount = () => users().filter(u => u.role === 'admin' && u.status === 'active').length;
+  const adminCount = () => users().filter(u => u.role === 'partner' && u.status === 'active').length;
 
   /* ---------------- Engagements ---------------- */
 

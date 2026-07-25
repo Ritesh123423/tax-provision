@@ -22,7 +22,7 @@ const Auth = (() => {
   const PERMS = {
     partner: ['engagement.create','engagement.editAny','engagement.deleteAny','engagement.signoff','engagement.lock','engagement.export','user.manage','rate.manage','checklist.manage','log.view','firm.manage','data.manage'],
     manager: ['engagement.create','engagement.editAny','engagement.deleteOwn','engagement.signoff','engagement.export','log.view'],
-    article: ['engagement.create','engagement.editOwn','engagement.deleteOwn','engagement.export'],
+    article: ['engagement.editOwn','engagement.deleteOwn','engagement.export'],  // articles cannot create engagements
   };
 
   /* ---------------- Session ---------------- */
@@ -216,8 +216,14 @@ const Auth = (() => {
   function visibleEngagements(user = currentUser()) {
     const all = Store.engagements();
     if (!user) return [];
-    if (['partner', 'manager'].includes(user.role)) return all;
-    return all.filter(e => e.ownerId === user.id || e.assignedTo === user.id);
+    // Partners and managers see everything
+    if (user.role === 'partner' || user.role === 'manager') return all;
+    // Articles see only engagements they own or are a team member of
+    return all.filter(e =>
+      e.ownerId === user.id ||
+      e.assignedTo === user.id ||
+      (e.teamMembers || []).some(m => m.userId === user.id)
+    );
   }
 
   const roleLabel = role => Store.ROLES[role]?.label || role;

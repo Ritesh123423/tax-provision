@@ -75,12 +75,21 @@
 
   function setPanel(el, on) {
     el.classList.toggle('open', on);
-    const anyOpen = side.classList.contains('open') || rail.classList.contains('open');
+    const anyOpen = el.classList.contains('open');
     if (anyOpen && !scrim) {
       scrim = document.createElement('div');
       scrim.className = 'scrim';
-      scrim.addEventListener('click', () => { // no side panel // no rail });
+      scrim.addEventListener('click', () => {
+        setPanel(el, false);
+        if (scrim) {
+          scrim.remove();
+          scrim = null;
+        }
+      });
       document.body.appendChild(scrim);
+    } else if (!anyOpen && scrim) {
+      scrim.remove();
+      scrim = null;
     }
   }
 
@@ -291,7 +300,7 @@
         e.stopPropagation();
         const teamEng = Store.engagementById(el.dataset.id);
         if (!teamEng) break;
-        Team.openTeamModal(teamEng, user, () => render());
+        Team.openTeamModal(teamEng, user, () => { render(); renderPortfolio(); });
         break;
       }
 
@@ -388,6 +397,10 @@
 
   /* ---------------- Engagement list controls ---------------- */
 
+  // Hide new-eng button for articles
+  if (user.role === 'article') {
+    byId('btn-new-eng').style.display = 'none';
+  }
   byId('btn-new-eng').addEventListener('click', () => newEngagement());
 
   // Disclosure note toggle (collapsed in checklist step)
@@ -404,7 +417,7 @@
     }
   });
 
-  byId('btn-manage-team').addEventListener('click', () => {
+  byId('btn-manage-team')?.addEventListener('click', () => {
     const eng = State.get();
     if (!eng) { U.toast('Open an engagement first.', 'err'); return; }
     Team.openTeamModal(eng, user, () => render());
@@ -422,10 +435,16 @@
   });
 
   function newEngagement() {
-    if (!Auth.can('engagement.create')) { U.toast('Your role cannot create engagements.', 'err'); return; }
-    State.create(user);
-    go('client', 'ci-name');
-    U.toast('New engagement created', 'ok');
+    // Only partners and managers can create engagements
+    if (user.role === 'article') {
+      U.toast('Articles cannot create engagements. Ask a Partner or Manager.', 'err', 4000);
+      return;
+    }
+    // Open the creation modal — team is set here, engagement is only created on confirm
+    Team.openCreateModal(user, eng => {
+      State.open(eng.id);
+      go('client', 'ci-name');
+    });
   }
 
   /* ---------------- Export menu ---------------- */
@@ -669,7 +688,7 @@
     sel.innerHTML =
       '<option value="__all">All engagements…</option>' +
       list.map(e2 => `<option value="${esc(e2.id)}" ${cur?.id === e2.id ? 'selected' : ''}>${esc(e2.name || 'Untitled')} · ${esc(e2.fy)}</option>`).join('') +
-      (Auth.can('engagement.create') ? '<option value="__new">+ New engagement</option>' : '');
+      (user.role !== 'article' ? '<option value="__new">+ New engagement</option>' : '');
     if (cur) sel.value = cur.id; else sel.value = '__all';
   }
 
@@ -816,7 +835,11 @@
     U.toast(`Welcome, ${user.name.split(' ')[0]}.`, 'ok', 3500);
   }
 
-  if (!State.isOpen() && Auth.can('engagement.create')) {
-    U.toast('Create an engagement to begin.', 'info', 4500);
+  if (!State.isOpen()) {
+    if (user.role === 'article') {
+      U.toast('Ask a Partner or Manager to create an engagement and add you to the team.', 'info', 5000);
+    } else {
+      U.toast('Create your first engagement to begin.', 'info', 4000);
+    }
   }
 })();
