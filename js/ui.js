@@ -116,7 +116,7 @@
 
   function go(next, field) {
     if (!STEP_ORDER.includes(next)) next = 'portfolio';
-    if (next !== 'portfolio' && !State.isOpen()) next = 'portfolio';
+    // Allow navigation to all tabs - removed restriction that forced portfolio
 
     // Flush any edit still sitting in the 700ms autosave debounce before
     // leaving the step — Duplicate, Roll forward and the portfolio cards all

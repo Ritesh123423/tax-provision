@@ -221,21 +221,23 @@ textarea.inp { resize:vertical; min-height:80px; font-family:var(--font); text-a
 .card {
   background:var(--surface); border:1.5px solid var(--border);
   border-radius:var(--r-md); box-shadow:var(--sh-xs);
-  margin-bottom:18px; overflow:hidden;
+  margin-bottom:24px; /* Increased from 18px */
+  overflow:hidden;
   animation:rise 300ms var(--ease-out) both;
   transition:box-shadow var(--ease-out), border-color var(--ease-out);
 }
 .card:hover { box-shadow:var(--sh-sm); }
 .card-hdr {
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-  padding:14px 20px; border-bottom:1.5px solid var(--border-2);
+  display:flex; align-items:center; justify-content:space-between; gap:14px; /* Increased from 12px */
+  padding:16px 24px; /* Increased from 14px 20px */
+  border-bottom:1.5px solid var(--border-2);
   background:var(--surface-2); flex-wrap:wrap;
 }
-.card-title { font-size:var(--fs-md); font-weight:700; color:var(--navy); display:flex; align-items:center; gap:9px; letter-spacing:-.015em; }
+.card-title { font-size:var(--fs-md); font-weight:700; color:var(--navy); display:flex; align-items:center; gap:10px; letter-spacing:-.015em; } /* Increased gap from 9px */
 .card-sub { font-size:var(--fs-xs); color:var(--slate-2); font-weight:400; letter-spacing:0; }
-.card-body { padding:20px; }
+.card-body { padding:24px; } /* Increased from 20px */
 .card-body-flush { padding:0; }
-.card-foot { padding:12px 20px; border-top:1.5px solid var(--border-2); background:var(--surface-2); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.card-foot { padding:14px 24px; border-top:1.5px solid var(--border-2); background:var(--surface-2); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; } /* Increased padding and gap */
 
 /* Workpaper ref chip */
 .wpref { font-family:var(--mono); font-size:var(--fs-xs); font-weight:600; color:var(--sky-tx); background:var(--sky-bg); border:1px solid var(--sky-bd); padding:2px 8px; border-radius:var(--r-xs); letter-spacing:.03em; white-space:nowrap; }

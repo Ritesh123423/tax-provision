@@ -11,10 +11,11 @@ body.app { overflow:hidden; height:100vh; }
   position:fixed; inset:0 0 auto 0; height:var(--hh); z-index:900;
   background:var(--navy);
   display:flex; align-items:center; justify-content:space-between;
-  gap:12px; padding:0 20px;
+  gap:16px; /* Increased from 12px */
+  padding:0 24px; /* Increased from 20px */
   box-shadow:0 1px 0 rgba(255,255,255,.07), 0 2px 16px rgba(26,34,54,.22);
 }
-.hdr-l,.hdr-r { display:flex; align-items:center; gap:8px; min-width:0; }
+.hdr-l,.hdr-r { display:flex; align-items:center; gap:12px; min-width:0; } /* Increased gap from 8px */
 
 .mark {
   width:34px; height:34px; border-radius:var(--r-sm); flex:none;
@@ -70,19 +71,21 @@ body.app { overflow:hidden; height:100vh; }
 
 /* Engagement picker in tab bar */
 .eng-pick-bar {
-  display:flex; align-items:center; gap:8px;
-  padding:8px 16px; border-right:1.5px solid var(--border);
-  flex:none; min-width:0; max-width:260px;
+  display:flex; align-items:center; gap:10px; /* Increased from 8px */
+  padding:10px 20px; /* Increased padding */
+  border-right:1.5px solid var(--border);
+  flex:none; min-width:0; max-width:280px; /* Increased from 260px */
 }
-.eng-pick-bar select { font-size:var(--fs-xs); padding:5px 28px 5px 9px; min-width:0; flex:1; }
+.eng-pick-bar select { font-size:var(--fs-xs); padding:6px 28px 6px 10px; min-width:0; flex:1; } /* Slightly increased padding */
 
 /* Tab items */
-.tab-group { display:flex; align-items:stretch; }
-.tab-sep { width:1.5px; background:var(--border-2); margin:8px 0; flex:none; }
+.tab-group { display:flex; align-items:stretch; gap:2px; } /* Added gap between tabs */
+.tab-sep { width:1.5px; background:var(--border-2); margin:10px 0; flex:none; } /* Increased margin */
 
 .tab-item {
-  display:flex; align-items:center; gap:7px;
-  padding:0 16px; background:none; border:none;
+  display:flex; align-items:center; gap:8px; /* Increased from 7px */
+  padding:0 18px; /* Increased from 16px */
+  background:none; border:none;
   border-bottom:3px solid transparent;
   font-size:var(--fs-sm); font-weight:500; color:var(--slate);
   cursor:pointer; white-space:nowrap; height:48px;
@@ -96,8 +99,16 @@ body.app { overflow:hidden; height:100vh; }
 .tab-flag { position:absolute; top:6px; right:6px; width:7px; height:7px; border-radius:50%; background:var(--rose); }
 
 /* ── Page content ── */
-.main { flex:1; overflow-y:auto; overflow-x:hidden; padding:28px 32px 80px; }
-.sheet { max-width:1080px; margin:0 auto; }
+.main { 
+  flex:1; 
+  overflow-y:auto; 
+  overflow-x:hidden; 
+  padding:32px 40px 80px; /* Increased horizontal padding from 32px to 40px */
+}
+.sheet { 
+  max-width:1200px; /* Increased from 1080px for better use of space */
+  margin:0 auto; 
+}
 
 .pg-hdr { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:24px; flex-wrap:wrap; }
 .pg-eye { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
