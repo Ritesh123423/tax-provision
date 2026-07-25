@@ -36,6 +36,7 @@
   .p-head {
     display: flex; justify-content: space-between; align-items: flex-start;
     padding-bottom: 6pt; border-bottom: 1.2pt solid #000; margin-bottom: 12pt;
+    box-shadow: 0 3pt 0 -2pt #223c7d;
   }
   .p-firm { font-family: 'Archivo', sans-serif; font-size: 12pt; font-weight: 700; letter-spacing: -.01em; }
   .p-tag { font-family: 'Archivo', sans-serif; font-size: 7.5pt; letter-spacing: .1em; text-transform: uppercase; color: #444; }

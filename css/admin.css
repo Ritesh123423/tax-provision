@@ -27,9 +27,10 @@ body.admin { background: var(--paper); min-height: 100vh; }
   border-bottom: 2px solid transparent;
   font-size: var(--fs-sm); font-weight: 600; color: var(--ink-500);
   cursor: pointer; white-space: nowrap;
-  transition: color var(--ease), border-color var(--ease);
+  transition: color var(--ease-2), border-color var(--ease-2), background var(--ease-2);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
 }
-.a-tab:hover { color: var(--ink-900); }
+.a-tab:hover { color: var(--ink-900); background: var(--paper-2); }
 .a-tab[aria-selected="true"] { color: var(--indigo-600); border-bottom-color: var(--indigo-600); }
 .a-tab-count {
   display: inline-block; margin-left: 6px; padding: 0 6px;
@@ -45,7 +46,12 @@ body.admin { background: var(--paper); min-height: 100vh; }
 
 /* Stat strip */
 .a-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 22px; }
-.a-stat { background: var(--card); border: 1px solid var(--rule); border-radius: var(--r); padding: 13px 15px; }
+.a-stat {
+  background: var(--card); border: 1px solid var(--rule); border-radius: var(--r); padding: 13px 15px;
+  box-shadow: var(--sh-1); transition: transform var(--ease-2), box-shadow var(--ease-2);
+  animation: rise-in 340ms var(--ease-out) both;
+}
+.a-stat:hover { transform: translateY(-2px); box-shadow: var(--sh-2); }
 .a-stat-l { font-size: var(--fs-xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-400); }
 .a-stat-v { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--ink-900); margin-top: 4px; letter-spacing: -.02em; }
 .a-stat-s { font-size: var(--fs-xs); color: var(--ink-500); margin-top: 2px; }
