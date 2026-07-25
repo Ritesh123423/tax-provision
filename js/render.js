@@ -762,6 +762,20 @@ const Render = (() => {
      ENGAGEMENT LIST
      ========================================================== */
 
+
+  function buildTeamAvatars(eng) {
+    const all = [eng.ownerId, ...(eng.teamMembers || []).map(m => m.userId)].filter(Boolean);
+    const visible = all.slice(0, 4);
+    const more = all.length - visible.length;
+    const avatars = visible.map(uid => {
+      const u = Store.userById(uid);
+      const initials = u ? u.name.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() : '?';
+      return `<span class="eng-avatar" title="${e(u?.name || uid)}">${initials}</span>`;
+    }).join('');
+    const moreEl = more > 0 ? `<span class="eng-avatar eng-avatar-more">+${more}</span>` : '';
+    return avatars + moreEl;
+  }
+
   function engList(list, canDeleteFn) {
     if (!list.length) {
       return `<div class="card"><div class="empty-state">
@@ -800,11 +814,13 @@ const Render = (() => {
           <div><div class="eng-card-fig-l">Tax expense</div><div class="eng-card-fig-v">${fb(res.te.total)}</div></div>
           <div><div class="eng-card-fig-l">Effective rate</div><div class="eng-card-fig-v">${fp(res.te.etr)}</div></div>
         </div>
-        <div class="row spread mt-8" style="border-top:1px solid var(--rule-2);padding-top:9px">
-          <span class="hint">${e(owner?.name || 'Unassigned')} · ${U.relTime(eng.updatedAt)}</span>
+        <div class="eng-progress-bar"><div class="eng-progress-fill" style="width:${res.progress.pct}%"></div></div>
+        <div class="eng-team-avatars">
+          <span class="eng-avatars">${buildTeamAvatars(eng)}<span class="hint" style="margin-left:8px">${e(owner?.name || 'Owner')} · ${U.relTime(eng.updatedAt)}</span></span>
           <span class="row" style="gap:4px">
+            <button class="btn btn-quiet btn-sm" data-act="team-eng" data-id="${e(eng.id)}" title="Manage team">Team</button>
             <button class="btn btn-quiet btn-sm" data-act="dup-eng" data-id="${e(eng.id)}">Duplicate</button>
-            ${canDeleteFn(eng) ? `<button class="btn btn-quiet btn-sm" data-act="del-eng" data-id="${e(eng.id)}" style="color:var(--dtl)">Delete</button>` : ''}
+            ${canDeleteFn(eng) ? `<button class="btn btn-quiet btn-sm" data-act="del-eng" data-id="${e(eng.id)}" style="color:var(--dtl-text)">Delete</button>` : ''}
           </span>
         </div>
       </div>`;

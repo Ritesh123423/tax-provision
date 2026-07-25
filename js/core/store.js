@@ -254,6 +254,7 @@ const Store = (() => {
       status: 'draft',
       ownerId: ownerId || null,
       assignedTo: ownerId || null,
+      teamMembers: [],   // [{userId, role: 'preparer'|'reviewer'|'viewer', addedAt}]
       locked: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

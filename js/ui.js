@@ -281,6 +281,14 @@
         go('client');
         break;
 
+      case 'team-eng': {
+        e.stopPropagation();
+        const teamEng = Store.engagementById(el.dataset.id);
+        if (!teamEng) break;
+        Team.openTeamModal(teamEng, user, () => render());
+        break;
+      }
+
       case 'dup-eng': {
         e.stopPropagation();
         const copy = Store.duplicateEngagement(el.dataset.id, user.id);
@@ -375,6 +383,12 @@
   /* ---------------- Engagement list controls ---------------- */
 
   byId('btn-new-eng').addEventListener('click', () => newEngagement());
+
+  byId('btn-manage-team').addEventListener('click', () => {
+    const eng = State.get();
+    if (!eng) { U.toast('Open an engagement first.', 'err'); return; }
+    Team.openTeamModal(eng, user, () => render());
+  });
   byId('btn-import-eng').addEventListener('click', () => Exporter.importEngagement(() => { render(); }));
   byId('eng-search').addEventListener('input', U.debounce(() => renderPortfolio(), 160));
   byId('eng-filter').addEventListener('change', () => renderPortfolio());
