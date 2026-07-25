@@ -83,9 +83,9 @@
       ['Storage used', (Store.usage() / 1024).toFixed(0) + ' KB', 'In this browser profile']
     ].map(([l, v, s]) => `
       <div class="a-stat">
-        <div class="a-stat-l">${l}</div>
-        <div class="a-stat-v">${typeof v === 'number' ? U.fmt(v) : esc(v)}</div>
-        <div class="a-stat-s">${esc(s)}</div>
+        <div class="a-stat-lbl">${l}</div>
+        <div class="a-stat-val">${typeof v === 'number' ? U.fmt(v) : esc(v)}</div>
+        <div class="a-stat-sub">${esc(s)}</div>
       </div>`).join('');
 
     byId('overview-notice').innerHTML = `
@@ -101,9 +101,9 @@
     const log = Store.getLog().slice(0, 9);
     byId('overview-log').innerHTML = log.length
       ? log.map(l => `<div class="log-row">
-          <span class="log-ts">${U.relTime(l.ts)}</span>
-          <span class="log-who">${esc(l.userName)}</span>
-          <span class="log-what">${esc(l.action)}${l.detail ? ' — <b>' + esc(l.detail) + '</b>' : ''}</span>
+          <span class="log-time">${U.relTime(l.ts)}</span>
+          <span class="log-user">${esc(l.userName)}</span>
+          <span class="log-msg">${esc(l.action)}${l.detail ? ' — <b>' + esc(l.detail) + '</b>' : ''}</span>
         </div>`).join('')
       : '<div style="padding:22px;text-align:center" class="txt-mute">Nothing recorded yet.</div>';
 
@@ -112,7 +112,7 @@
       ? attention.map(x => `<div class="log-row" style="grid-template-columns:1fr auto">
           <span>
             <b>${esc(x.eng.name || 'Untitled')}</b>
-            <span class="log-ts"> · ${esc(x.eng.fy)}</span>
+            <span class="log-time"> · ${esc(x.eng.fy)}</span>
           </span>
           <span class="badge badge-flag">${x.res.tallies.queries + x.res.validation.errors.length} open</span>
         </div>`).join('')
@@ -146,12 +146,11 @@
       return `<tr>
         <td>
           <div class="u-cell">
-            <span class="avatar">${esc(u.name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase())}</span>
-            <span style="min-width:0">
-              <span class="u-name">${esc(u.name)}${isMe ? ' <span class="u-you">· you</span>' : ''}</span>
-              <span class="u-mail">${esc(u.email)}</span>
-              ${u.designation ? `<span class="u-mail">${esc(u.designation)}</span>` : ''}
-            </span>
+            <div class="u-avatar">${esc(u.name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase())}</div>
+            <div class="u-info">
+              <div class="u-name">${esc(u.name)}${isMe ? ' <span class="badge badge-indigo" style="font-size:9px;margin-left:4px">You</span>' : ''}</div>
+              <div class="u-email">${esc(u.email)}${u.designation ? ' · ' + esc(u.designation) : ''}</div>
+            </div>
           </div>
         </td>
         <td>
@@ -161,7 +160,7 @@
         </td>
         <td>
           <span class="row" style="gap:6px">
-            <span class="dot dot-${locked ? 'locked' : u.status}"></span>
+            <span class="status-dot status-dot-${locked ? 'locked' : u.status}"></span>
             <span>${locked ? 'Locked' : u.status === 'active' ? 'Active' : 'Suspended'}</span>
           </span>
           ${u.mustChangePassword ? '<div class="hint">Must change password</div>' : ''}
@@ -526,9 +525,9 @@
 
     byId('log-body').innerHTML = log.length
       ? log.slice(0, 400).map(l => `<div class="log-row">
-          <span class="log-ts">${U.fmtDateTime(l.ts)}</span>
-          <span class="log-who">${esc(l.userName)}</span>
-          <span class="log-what">${esc(l.action)}${l.detail ? ' — <b>' + esc(l.detail) + '</b>' : ''}</span>
+          <span class="log-time">${U.fmtDateTime(l.ts)}</span>
+          <span class="log-user">${esc(l.userName)}</span>
+          <span class="log-msg">${esc(l.action)}${l.detail ? ' — <b>' + esc(l.detail) + '</b>' : ''}</span>
         </div>`).join('') + (log.length > 400 ? `<div class="log-row"><span></span><span></span><span class="txt-mute">Showing the most recent 400 of ${U.fmt(log.length)}. Download the log for the rest.</span></div>` : '')
       : '<div style="padding:30px;text-align:center" class="txt-mute">Nothing matches.</div>';
   }

@@ -174,12 +174,25 @@
   function fillFields() {
     const eng = State.get();
     if (!eng) return;
+    // If the user is typing in ANY bound scalar field, skip the entire fill.
+    // The next rAF cycle from state.js will call us again; by then focus
+    // may have moved or the debounce will have settled.
+    const active = document.activeElement;
+    const activeId = active?.id;
+    const activeIsBound = FIELDS.some(([id]) => id === activeId);
     FIELDS.forEach(([id, path, kind]) => {
       const el = byId(id);
-      if (!el || document.activeElement === el) return;  // never fight the cursor
+      if (!el) return;
+      // Never overwrite the field the user is currently editing
+      if (el === active) return;
+      // If another bound field is focused, still update non-text fields safely
+      if (activeIsBound && kind !== 'bool' && el.tagName !== 'SELECT') return;
       const v = State.readPath(path);
-      if (kind === 'bool') el.checked = !!v;
-      else el.value = v === null || v === undefined ? '' : v;
+      if (kind === 'bool') { if (el.checked !== !!v) el.checked = !!v; }
+      else {
+        const str = v === null || v === undefined ? '' : String(v);
+        if (el.value !== str) el.value = str;
+      }
     });
   }
 
@@ -658,7 +671,9 @@
   }
 
   function renderCurrent(r) {
-    byId('ct-body').innerHTML = Render.ctRows(r.eng, editable);
+    const active = document.activeElement;
+    const ctBody = byId('ct-body');
+    if (!ctBody.contains(active)) ctBody.innerHTML = Render.ctRows(r.eng, editable);
     byId('mat-block').innerHTML = Render.matBlock(r.ct);
     U.setText('ct-taxable', U.fmtBr(r.ct.taxableIncome));
     U.setText('ct2-ti', U.fmtBr(r.ct.taxableIncome));
@@ -677,11 +692,20 @@
   }
 
   function renderDeferred(r) {
-    byId('dt-asset-body').innerHTML = Render.bsRows(r.dt.assets, 'assets', editable, showOpenCols);
+    // Only rebuild table bodies when no cell inside them is focused.
+    // This prevents the cursor jumping when typing in a deferred-tax cell.
+    const active = document.activeElement;
+    function safeSet(id, html) {
+      const el = byId(id);
+      if (!el) return;
+      if (el.contains(active)) return;   // user is typing inside this section
+      el.innerHTML = html;
+    }
+    safeSet('dt-asset-body', Render.bsRows(r.dt.assets, 'assets', editable, showOpenCols));
     byId('dt-asset-foot').innerHTML = Render.bsFoot(r.dt.secA, 6);
-    byId('dt-liab-body').innerHTML = Render.bsRows(r.dt.liabs, 'liabs', editable, showOpenCols);
+    safeSet('dt-liab-body', Render.bsRows(r.dt.liabs, 'liabs', editable, showOpenCols));
     byId('dt-liab-foot').innerHTML = Render.bsFoot(r.dt.secL, 6);
-    byId('dt-other-body').innerHTML = Render.otherRows(r.dt.others, editable, showOpenCols);
+    safeSet('dt-other-body', Render.otherRows(r.dt.others, editable, showOpenCols));
     byId('dt-other-foot').innerHTML = Render.otherFoot(r.dt.secO);
     byId('dt-summary').innerHTML = Render.dtSummary(r);
     byId('unrec-block').innerHTML = Render.unrecognised(r);

@@ -6,6 +6,14 @@
  * Holds exactly one engagement in memory, resolves `data-bind` paths against
  * it, recomputes on change, and writes back to storage on a debounce so a
  * fast typist does not trigger a write per keystroke.
+ *
+ * FLICKER FIX: recompute() is split into two phases:
+ *   1. Compute the result immediately (pure math, fast).
+ *   2. Notify subscribers via rAF so DOM rebuilds never interrupt a keystroke.
+ *
+ * The render() callback in ui.js also guards fillFields() against active
+ * elements, but the real fix is here: subscribers are never called synchronously
+ * during an input event.
  */
 
 const State = (() => {
@@ -14,6 +22,8 @@ const State = (() => {
   let result = null;    // last Compute.run output
   let dirty = false;
   let saveFailed = false;
+  let notifyPending = false;
+  let pendingReason = 'edit';
   const subs = new Set();
 
   const get = () => current;
@@ -22,7 +32,26 @@ const State = (() => {
   const hasSaveFailed = () => saveFailed;
 
   const onChange = fn => { subs.add(fn); return () => subs.delete(fn); };
-  const notify = (reason) => subs.forEach(fn => { try { fn(result, current, reason); } catch (err) { console.error(err); } });
+
+  // Always schedule through rAF — this ensures DOM rebuilds never run
+  // synchronously during an input event, which eliminates flicker/focus-loss.
+  function notify(reason) {
+    pendingReason = reason;
+    if (notifyPending) return;   // coalesce rapid calls into one rAF
+    notifyPending = true;
+    requestAnimationFrame(() => {
+      notifyPending = false;
+      const r = pendingReason;
+      subs.forEach(fn => { try { fn(result, current, r); } catch (err) { console.error(err); } });
+    });
+  }
+
+  // For operations where callers need the render to be synchronous (open,
+  // create, go()), use notifySync.
+  function notifySync(reason) {
+    notifyPending = false;
+    subs.forEach(fn => { try { fn(result, current, reason); } catch (err) { console.error(err); } });
+  }
 
   /* ---------------- Open / close ---------------- */
 
@@ -32,8 +61,10 @@ const State = (() => {
     saveNow();
     current = eng;
     try { localStorage.setItem('kgs.lastEngagement', id); } catch {}
-    recompute('open');
+    result = Compute.run(current);
+    dirty = false;
     Store.log('Opened engagement', eng.name || 'Untitled', eng.id);
+    notifySync('open');
     return eng;
   }
 
@@ -41,7 +72,7 @@ const State = (() => {
     saveNow();
     current = null;
     result = null;
-    notify('close');
+    notifySync('close');
   }
 
   function create(user) {
@@ -51,11 +82,12 @@ const State = (() => {
     current = eng;
     try { localStorage.setItem('kgs.lastEngagement', eng.id); } catch {}
     Store.log('Created engagement', eng.fy, eng.id);
-    recompute('create');
+    result = Compute.run(current);
+    dirty = false;
+    notifySync('create');
     return eng;
   }
 
-  /** Reopen whatever was last worked on, or the most recent accessible one. */
   function restore(user) {
     let id = null;
     try { id = localStorage.getItem('kgs.lastEngagement'); } catch {}
@@ -68,18 +100,13 @@ const State = (() => {
     return null;
   }
 
-  /* ---------------- Path binding ----------------
-     Paths look like `dt.assets.<rowId>.ca` or `ct.rows.<rowId>.amt`, and
-     scalar fields use a plain path such as `opening.dta`.
-     ---------------------------------------------- */
+  /* ---------------- Path binding ---------------- */
 
-  /** Locate the container holding a bound value, plus the final key. */
   function resolve(path) {
     if (!current) return null;
     const parts = path.split('.');
     const key = parts.pop();
 
-    // Row collections are arrays keyed by id, not objects.
     if (parts.length === 2 && parts[0] === 'ct' && parts[1] === 'rows') return null;
     if (parts.length === 3) {
       const [a, b, rowId] = parts;
@@ -136,7 +163,6 @@ const State = (() => {
 
   /* ---------------- Checklist ---------------- */
 
-  /** Marking the same state twice clears it, so a mis-click is one click to undo. */
   function markChecklist(itemId, state, user) {
     current.checklist = current.checklist || {};
     const existing = current.checklist[itemId];
@@ -173,9 +199,11 @@ const State = (() => {
 
   function recompute(reason = 'edit') {
     if (!current) { result = null; notify(reason); return null; }
+    // Compute synchronously — it's fast pure math
     result = Compute.run(current);
     dirty = true;
     scheduleSave();
+    // Schedule DOM update via rAF — never blocks an input event
     notify(reason);
     return result;
   }
@@ -190,17 +218,13 @@ const State = (() => {
     return ok;
   }
 
-  /** Recompute without touching storage — used when only display options change. */
   function refresh() {
     if (!current) return null;
     result = Compute.run(current);
-    notify('refresh');
+    notifySync('refresh');
     return result;
   }
 
-  // A tab closing mid-edit must not lose the last few keystrokes. If the
-  // write itself failed (storage full/blocked), warn the browser so it asks
-  // the user to confirm leaving rather than closing on an unsaved edit.
   window.addEventListener('beforeunload', e => {
     scheduleSave.cancel?.();
     saveNow();

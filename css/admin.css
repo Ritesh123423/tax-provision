@@ -1,123 +1,242 @@
 /* ============================================================
-   ADMIN.CSS — Admin panel
-   Inherits base.css. Additional admin-specific components.
+   ADMIN.CSS — Admin console
+   admin.html uses its own chrome: a-top header, horizontal tab
+   bar (a-tabs), and a scrollable a-body content area.
+   Inherits all tokens from base.css.
    ============================================================ */
 
-body.admin-page {
-  overflow: hidden;
+/* ── Body ─────────────────────────────────────────────────── */
+body.admin {
+  min-height: 100vh;
+  background: var(--bg);
+  overflow-y: auto;
+  padding-top: var(--hh);       /* clear the fixed header */
+  padding-bottom: 0;
 }
 
-/* Admin uses same shell as app */
-.admin-shell {
-  position: fixed; inset: var(--hh) 0 0 0;
-  display: grid; grid-template-columns: var(--sw) minmax(0, 1fr);
+/* ── Fixed top header ────────────────────────────────────── */
+.a-top {
+  position: fixed; inset: 0 0 auto 0;
+  height: var(--hh); z-index: 900;
+  background: linear-gradient(180deg, #1a2744 0%, #111827 100%);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 0 20px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.07), 0 2px 20px rgba(10,14,20,.22);
+}
+.a-top-l { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.a-title {
+  font-size: var(--fs-sm); font-weight: 700;
+  color: #fff; letter-spacing: -.01em;
+  display: flex; align-items: center; gap: 10px;
+}
+.a-title span {
+  font-size: var(--fs-xs); font-weight: 400;
+  color: rgba(255,255,255,.4);
+  padding-left: 10px;
+  border-left: 1px solid rgba(255,255,255,.14);
 }
 
-/* Admin sidebar */
-.admin-side {
+/* ── Horizontal tab nav ──────────────────────────────────── */
+.a-tabs {
+  position: sticky; top: var(--hh); z-index: 800;
+  display: flex; align-items: stretch; gap: 0;
   background: var(--card);
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  box-shadow: var(--sh-xs);
+  overflow-x: auto;
 }
-.admin-side-scroll { flex: 1 1 auto; overflow-y: auto; padding: 10px 8px; }
-.admin-main { overflow-y: auto; padding: 28px 32px 80px; }
-.admin-sheet { max-width: 960px; margin: 0 auto; }
+.a-tabs::-webkit-scrollbar { height: 0; }
 
-/* Stat cards */
-.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
-.stat {
+.a-tab {
+  flex: none;
+  padding: 13px 18px;
+  background: none; border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: var(--fs-sm); font-weight: 600;
+  color: var(--ink-500); cursor: pointer; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px;
+  transition: color var(--ease), border-color var(--ease);
+}
+.a-tab:hover { color: var(--ink-800); }
+.a-tab[aria-selected="true"] {
+  color: var(--indigo-600);
+  border-bottom-color: var(--indigo-600);
+}
+.a-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 9px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  font-size: var(--fs-xs); font-weight: 700; color: var(--ink-500);
+  transition: background var(--ease), color var(--ease);
+}
+.a-tab[aria-selected="true"] .a-tab-count {
+  background: var(--indigo-100); border-color: var(--indigo-200);
+  color: var(--indigo-700);
+}
+
+/* ── Main content area ───────────────────────────────────── */
+.a-body {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+}
+
+/* Pane show/hide */
+.a-pane { display: none; }
+.a-pane.on { display: block; animation: rise-in 240ms var(--ease-out); }
+
+/* Section header inside each pane */
+.a-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin-bottom: 22px; flex-wrap: wrap;
+}
+.a-head .lede { margin-top: 4px; }
+
+/* Filter bar */
+.a-filters {
+  display: flex; gap: 10px; align-items: center;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.a-filters .inp { flex: 1; min-width: 180px; max-width: 320px; font-size: var(--fs-sm); }
+
+/* ── Stats strip (overview) ──────────────────────────────── */
+.a-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.a-stat {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--r-md); padding: 18px 20px;
   box-shadow: var(--sh-xs); position: relative; overflow: hidden;
   animation: rise-in 360ms var(--ease-out) both;
   transition: box-shadow var(--ease-out), transform var(--ease-out);
 }
-.stat:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
-.stat::after {
+.a-stat:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.a-stat::after {
   content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
   background: linear-gradient(90deg, var(--indigo-600), var(--indigo-400));
 }
-.stat-lbl { font-family: var(--mono); font-size: var(--fs-2xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-400); margin-bottom: 9px; }
-.stat-val { font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--ink-900); letter-spacing: -.05em; line-height: 1; }
-.stat-sub { font-size: var(--fs-xs); color: var(--ink-400); margin-top: 6px; }
+.a-stat-lbl {
+  font-family: var(--mono); font-size: var(--fs-2xs); font-weight: 700;
+  letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-400); margin-bottom: 10px;
+}
+.a-stat-val {
+  font-family: var(--mono); font-size: 30px; font-weight: 700;
+  color: var(--ink-900); letter-spacing: -.05em; line-height: 1;
+}
+.a-stat-sub { font-size: var(--fs-xs); color: var(--ink-400); margin-top: 6px; }
 
-/* User table */
-.user-row td { vertical-align: middle; }
-.user-avatar {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--indigo-500), var(--indigo-700));
+/* ── User avatar in tables ───────────────────────────────── */
+.u-avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  background: linear-gradient(135deg, var(--indigo-400), var(--indigo-700));
   color: #fff; display: grid; place-items: center;
-  font-size: var(--fs-xs); font-weight: 700; flex: none; letter-spacing: .03em;
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: .03em;
 }
-.role-select { font-size: var(--fs-xs); }
+.u-info { min-width: 0; }
+.u-name { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-900); }
+.u-email { font-size: var(--fs-xs); color: var(--ink-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.u-cell { display: flex; align-items: center; gap: 10px; }
 
-/* Rate cards */
-.rate-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--r-md); padding: 20px; margin-bottom: 14px;
-  box-shadow: var(--sh-xs); animation: rise-in 300ms var(--ease-out) both;
-  transition: box-shadow var(--ease-out);
+/* ── Danger zone ─────────────────────────────────────────── */
+.danger-zone .card-hdr { background: var(--dtl-bg); }
+.danger-zone .card-hdr .card-title { color: var(--dtl-text); }
+
+.dz-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; padding: 16px 0;
+  border-bottom: 1px solid var(--border-2);
+  flex-wrap: wrap;
 }
-.rate-card:hover { box-shadow: var(--sh-sm); }
-.rate-hdr { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.rate-name { font-size: var(--fs-md); font-weight: 700; color: var(--ink-900); }
-.rate-pct { font-family: var(--mono); font-size: var(--fs-xl); font-weight: 700; color: var(--indigo-600); }
+.dz-row:last-child { border-bottom: none; padding-bottom: 0; }
+.dz-row > div { flex: 1; min-width: 0; }
+.dz-row > div strong { font-size: var(--fs-sm); font-weight: 700; color: var(--ink-900); display: block; margin-bottom: 4px; }
+.dz-row > div p { font-size: var(--fs-xs); color: var(--ink-500); line-height: 1.55; margin: 0; }
+.dz-row > button { flex: none; align-self: center; }
 
-/* Log */
-.log-entry { display: flex; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border-3); align-items: flex-start; font-size: var(--fs-sm); }
-.log-time { font-family: var(--mono); font-size: var(--fs-xs); color: var(--ink-400); white-space: nowrap; padding-top: 2px; flex: none; min-width: 110px; }
-.log-user { font-weight: 600; color: var(--ink-800); }
-.log-action { color: var(--ink-500); }
-.log-what { color: var(--ink-700); }
-
-/* Admin tabs */
-.admin-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-.admin-tab {
-  padding: 9px 16px; background: none; border: none;
-  border-bottom: 2px solid transparent; margin-bottom: -1px;
-  font-size: var(--fs-sm); font-weight: 600; color: var(--ink-500);
-  cursor: pointer; white-space: nowrap;
-  transition: color var(--ease), border-color var(--ease);
-}
-.admin-tab:hover { color: var(--ink-800); }
-.admin-tab[aria-selected="true"] { color: var(--indigo-600); border-bottom-color: var(--indigo-600); }
-
-@media (max-width: 760px) {
-  .stat-grid { grid-template-columns: 1fr; }
-  .admin-main { padding: 16px 16px 60px; }
-}
-
-/* ── Admin-specific header ── */
-.a-top {
-  position: fixed; inset: 0 0 auto 0;
-  height: var(--hh); z-index: 900;
-  background: linear-gradient(180deg, #1a2744 0%, #111827 100%);
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 0 16px;
-  box-shadow: 0 1px 0 rgba(255,255,255,.06), 0 2px 20px rgba(10,14,20,.22);
-}
-.a-top-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.a-title {
-  font-size: var(--fs-sm); font-weight: 700; color: #fff;
+/* ── Acct menu on admin page ─────────────────────────────── */
+.admin .acct { position: relative; }
+.admin .acct-btn {
   display: flex; align-items: center; gap: 8px;
-  letter-spacing: -.01em;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.13);
+  border-radius: var(--r); padding: 5px 10px 5px 5px; cursor: pointer;
+  color: rgba(255,255,255,.85); font-size: var(--fs-xs); font-weight: 600;
+  transition: background var(--ease);
 }
-.a-title span {
-  font-size: var(--fs-xs); font-weight: 400;
-  color: rgba(255,255,255,.42); padding-left: 8px;
-  border-left: 1px solid rgba(255,255,255,.14);
+.admin .acct-btn:hover { background: rgba(255,255,255,.16); }
+
+/* ── Log entries ─────────────────────────────────────────── */
+.log-row {
+  display: grid; grid-template-columns: 130px 1fr;
+  gap: 12px; align-items: start;
+  padding: 10px 18px; border-bottom: 1px solid var(--border-3);
+  font-size: var(--fs-sm);
+  transition: background var(--ease);
 }
-.a-body {
-  position: fixed; inset: var(--hh) 0 0 0;
-  display: grid; grid-template-columns: var(--sw) minmax(0, 1fr);
-  overflow: hidden;
+.log-row:hover { background: var(--card-2); }
+.log-row:last-child { border-bottom: none; }
+.log-time { font-family: var(--mono); font-size: var(--fs-xs); color: var(--ink-400); padding-top: 1px; }
+.log-msg { color: var(--ink-700); line-height: 1.5; }
+.log-user { font-weight: 600; color: var(--ink-900); }
+
+/* ── Role matrix ─────────────────────────────────────────── */
+.rm-yes { color: var(--dta); font-weight: 700; text-align: center; }
+.rm-no  { color: var(--ink-200); text-align: center; }
+
+/* ── Rate table helpers ──────────────────────────────────── */
+.rate-default-badge {
+  font-family: var(--mono); font-size: var(--fs-xs); font-weight: 700;
+  color: var(--indigo-700); background: var(--indigo-50);
+  border: 1px solid var(--indigo-100);
+  padding: 2px 7px; border-radius: var(--r-xs); letter-spacing: .03em;
 }
-.a-side {
-  background: var(--card); border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; overflow: hidden;
+
+/* ── Storage bar ─────────────────────────────────────────── */
+.storage-bar-wrap {
+  height: 8px; border-radius: 4px;
+  background: var(--border); overflow: hidden; margin: 10px 0 6px;
 }
-.a-side-scroll { flex: 1 1 auto; overflow-y: auto; padding: 10px 8px; }
-.a-main { overflow-y: auto; overflow-x: hidden; padding: 26px 32px 80px; }
-.a-sheet { max-width: 1000px; margin: 0 auto; }
-.a-tab-body { display: none; }
-.a-tab-body.on { display: block; animation: rise-in 260ms var(--ease-out); }
+.storage-bar-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--indigo-600), var(--indigo-400));
+  transition: width 400ms ease;
+}
+
+/* ── Checklist admin table ───────────────────────────────── */
+.chk-drag-handle {
+  color: var(--ink-300); cursor: grab; padding: 4px 6px;
+  font-size: 16px; line-height: 1;
+}
+.chk-drag-handle:hover { color: var(--ink-600); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .a-body { padding: 18px 14px 60px; }
+  .a-stats { grid-template-columns: repeat(2, 1fr); }
+  .a-tab { padding: 11px 12px; font-size: var(--fs-xs); }
+}
+@media (max-width: 600px) {
+  .a-stats { grid-template-columns: 1fr; }
+  .dz-row { flex-direction: column; }
+}
+
+/* ── Status dots ─────────────────────────────────────────── */
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block; flex: none;
+}
+.status-dot-active   { background: var(--dta); }
+.status-dot-suspended { background: var(--ink-300); }
+.status-dot-locked   { background: var(--dtl); }
+
+/* u-you tag */
+.u-you { font-size: var(--fs-xs); color: var(--ink-400); font-weight: 400; }
+
+/* Engagement name in admin table */
+.u-name { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-900); }
