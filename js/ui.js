@@ -68,12 +68,16 @@
   document.addEventListener('click', () => closeAcct());
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAcct(); });
 
-  /* ---------------- Mobile panels ---------------- */
+  /* ---------------- Mobile panels (currently not in use) ---------------- */
 
-  // No sidebar or rail — tab-based navigation
+  // Mobile sidebar functionality disabled - no btn-side in current UI
+  // Uncomment and define 'side' element if needed in future
+  /*
   let scrim = null;
+  const side = byId('side-panel'); // Define this if re-enabling
 
   function setPanel(el, on) {
+    if (!el) return;
     el.classList.toggle('open', on);
     const anyOpen = el.classList.contains('open');
     if (anyOpen && !scrim) {
@@ -93,13 +97,16 @@
     }
   }
 
-  byId('btn-side').addEventListener('click', e => {
-    e.stopPropagation();
-    const on = !side.classList.contains('open');
-    setPanel(side, on);
-    byId('btn-side').setAttribute('aria-expanded', String(on));
-  });
-  // rail replaced by tallies tab
+  const btnSide = byId('btn-side');
+  if (btnSide) {
+    btnSide.addEventListener('click', e => {
+      e.stopPropagation();
+      const on = !side.classList.contains('open');
+      setPanel(side, on);
+      btnSide.setAttribute('aria-expanded', String(on));
+    });
+  }
+  */
 
   /* ==========================================================
      NAVIGATION
