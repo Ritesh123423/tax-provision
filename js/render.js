@@ -814,6 +814,6 @@ const Render = (() => {
   return {
     ctRows, matBlock, bsRows, otherRows, bsFoot, otherFoot, dtSummary, unrecognised,
     movement, kpis, summary, journals, journalsText, etr, disclosure,
-    checklist, checklistSummary, signoff, rail, engList, sign
+    checklist, checklistSummary, signoff, rail, engList
   };
 })();

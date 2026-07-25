@@ -32,7 +32,6 @@
 const Compute = (() => {
 
   const n = U.toNum;
-  const rnd = U.round;
 
   /** Amounts below this are treated as nil, so float dust never shows up. */
   const EPS = 0.5;
@@ -75,7 +74,9 @@ const Compute = (() => {
 
     // Minimum alternate tax u/s 115JB. Book profit for MAT is a separate
     // computation, so it is entered separately and falls back to PBT.
-    const matBase = ct.matBookProfit !== '' && ct.matBookProfit !== null && ct.matBookProfit !== undefined && n(ct.matBookProfit) !== 0
+    // An explicit entry of 0 is a real MAT book profit, not a blank field, so
+    // only the presence of the field decides the fallback — never its value.
+    const matBase = ct.matBookProfit !== '' && ct.matBookProfit !== null && ct.matBookProfit !== undefined
       ? n(ct.matBookProfit) : bookProfit;
     const matTax = eng.applyMat && matRate > 0 ? Math.max(0, matBase) * matRate : 0;
     const matApplies = eng.applyMat && matRate > 0 && matTax > normalTax + EPS;
@@ -89,7 +90,12 @@ const Compute = (() => {
     const openingMat = n(eng.opening?.mat);
     const matUtilisedReq = n(ct.matUtilised);
     const matUtilised = matApplies ? 0 : Math.min(Math.max(0, matUtilisedReq), openingMat);
-    const matUtilCapped = matUtilisedReq > matUtilised + EPS;
+    // Two distinct reasons the request wasn't honoured in full — conflating them
+    // produced a false "exceeds the opening entitlement" error in a MAT year
+    // even when the requested figure was well within the entitlement.
+    const matBlockedByMatYear = matApplies && matUtilisedReq > EPS;
+    const matExceedsOpening = !matApplies && matUtilisedReq > matUtilised + EPS;
+    const matUtilCapped = matExceedsOpening;
 
     const priorYearAdj = n(ct.priorYearAdj);
     const currentTaxExpense = taxForYear + priorYearAdj;
@@ -103,7 +109,8 @@ const Compute = (() => {
       addsPerm, addsTemp, lessPerm, lessTemp,
       rate: n(eng.rate), matRate: n(eng.matRate),
       normalTax, matBase, matTax, matApplies,
-      taxForYear, matCreditCreated, matUtilised, matUtilCapped, openingMat,
+      taxForYear, matCreditCreated, matUtilised, matUtilCapped,
+      matBlockedByMatYear, matExceedsOpening, openingMat,
       priorYearAdj, currentTaxExpense, advanceTax, netPayable,
       isRefund: netPayable < -EPS
     };
@@ -141,6 +148,11 @@ const Compute = (() => {
       nature, recognised,
       alloc: r.alloc === 'oci' ? 'oci' : 'pl',
       unrecognisedDta: !recognised && signedFull > 0 ? signedFull : 0,
+      // A liability has no general non-recognition test under Ind AS 12 (only
+      // the narrow initial-recognition exception) — track it so an unchecked
+      // "recognised" box on a DTL row cannot make a real liability vanish
+      // from every total without a trace anywhere in the workpaper.
+      unrecognisedDtl: !recognised && signedFull < 0 ? -signedFull : 0,
       // Opening unrecognised amount. Needed so the effective rate reflects the
       // MOVEMENT in unrecognised assets, not the whole brought-forward balance
       // — a loss unrecognised last year already hit last year's rate.
@@ -169,6 +181,7 @@ const Compute = (() => {
       recognised,
       alloc: r.alloc === 'oci' ? 'oci' : 'pl',
       unrecognisedDta: !recognised && signedFull > 0 ? signedFull : 0,
+      unrecognisedDtl: !recognised && signedFull < 0 ? -signedFull : 0,
       openUnrec: n(r.openUnrec)
     };
   }
@@ -203,6 +216,9 @@ const Compute = (() => {
     const openingFS = n(eng.opening?.dta) - n(eng.opening?.dtl);
     const openingRows = sumBy(all, r => r.signedOpen);
     const openingDiff = openingRows - openingFS;
+    // P&L-allocated slice of the opening balance — needed to isolate the
+    // effect of a tax rate change on brought-forward balances (Ind AS 12.60).
+    const openingRowsPL = sumBy(all.filter(r => r.alloc === 'pl'), r => r.signedOpen);
 
     // Movement, split by where the tax follows the item it relates to.
     const movementPL  = sumBy(all.filter(r => r.alloc === 'pl'),  r => r.movement);
@@ -214,6 +230,7 @@ const Compute = (() => {
     const deferredTaxOCI = -movementOCI;
 
     const unrecognisedDTA = sumBy(all, r => r.unrecognisedDta);
+    const unrecognisedDTL = sumBy(all, r => r.unrecognisedDtl);
     const unrecognisedOpening = sumBy(all, r => r.openUnrec);
     const unrecognisedMovement = unrecognisedDTA - unrecognisedOpening;
     const unrecognisedRows = all.filter(r => r.unrecognisedDta > EPS || r.openUnrec > EPS);
@@ -232,8 +249,10 @@ const Compute = (() => {
     const matEffectPL = matUtilised - matCreated;
 
     // Presentation. Ind AS 12.74 permits offset only where a legally
-    // enforceable right exists with the same taxing authority.
-    const offset = eng.offsetPresentation !== false;
+    // enforceable right exists with the same taxing authority — the
+    // restrictive default is gross, not net, so an unset/imported field
+    // must not be read as an election to offset.
+    const offset = eng.offsetPresentation === true;
     const bsDTA = offset ? Math.max(0, closingNet) : grossDTA;
     const bsDTL = offset ? Math.max(0, -closingNet) : grossDTL;
 
@@ -242,16 +261,20 @@ const Compute = (() => {
       assets, liabs, others, all,
       secA, secL, secO,
       grossDTA, grossDTL, closingNet,
-      openingFS, openingRows, openingDiff,
+      openingFS, openingRows, openingRowsPL, openingDiff,
       openingDTA: n(eng.opening?.dta), openingDTL: n(eng.opening?.dtl),
       movementPL, movementOCI, movementTotal,
       deferredTaxPL, deferredTaxOCI,
-      unrecognisedDTA, unrecognisedRows,
+      unrecognisedDTA, unrecognisedDTL, unrecognisedRows,
       unrecognisedOpening, unrecognisedMovement, unrecognisedMovementPL,
       matOpening, matCreated, matUtilised, matClosing, matEffectPL,
       offset, bsDTA, bsDTL,
       // Closing tax effect per line, keyed by id — used to roll forward.
-      rowTaxEffects: Object.fromEntries(all.map(r => [r.id, rnd(r.signedClose)]))
+      // Kept at full precision: rounding here, ahead of the aggregate closing
+      // figure being rounded separately on roll-forward, made the two round
+      // independently and drift apart, which broke "opening agrees to prior
+      // year" in the very next year even though nothing was actually wrong.
+      rowTaxEffects: Object.fromEntries(all.map(r => [r.id, r.signedClose]))
     };
   }
 
@@ -321,6 +344,17 @@ const Compute = (() => {
     if (Math.abs(ct.priorYearAdj) > EPS)
       push('Tax relating to earlier years', ct.priorYearAdj, { indent: true });
 
+    /* A change in the rate between last year and this one re-measures every
+       brought-forward temporary difference (Ind AS 12.60, 81(d)). That
+       re-measurement is a genuine P&L movement already embedded in
+       dt.deferredTaxPL — without a line of its own it would otherwise be
+       mistaken below for temporary differences missing from the schedule. */
+    const priorRate = n(eng.priorRate);
+    const rateChanged = priorRate > EPS && Math.abs(priorRate - rate) > EPS;
+    const rateChangeEffect = rateChanged ? dt.openingRowsPL * (1 - rate / priorRate) : 0;
+    if (Math.abs(rateChangeEffect) > EPS)
+      push('Effect of change in tax rate on opening deferred tax', rateChangeEffect, { indent: true });
+
     /**
      * Diagnostic line — nil in a complete workpaper.
      *
@@ -332,10 +366,12 @@ const Compute = (() => {
      *
      * Unrecognised assets are deducted because their temporary difference sits
      * in the current tax computation while contributing nothing to deferred tax;
-     * that gap is already explained by the line above.
+     * that gap is already explained by the line above. The rate-change effect
+     * is deducted for the same reason — it is a real, already-explained P&L
+     * movement, not evidence of a missing schedule entry.
      */
     const netTempCt = ct.addsTemp - ct.lessTemp;
-    const tempGap = dt.deferredTaxPL + netTempCt * r - dt.unrecognisedMovementPL;
+    const tempGap = dt.deferredTaxPL + netTempCt * r - dt.unrecognisedMovementPL - rateChangeEffect;
     if (Math.abs(tempGap) > EPS)
       push('Temporary differences not carried to the deferred tax schedule', tempGap, { indent: true, diagnostic: true });
 
@@ -488,11 +524,13 @@ const Compute = (() => {
     /* 4. MAT credit schedule */
     const matArtic = dt.matOpening + dt.matCreated - dt.matUtilised;
     const anyMat = Math.abs(dt.matOpening) > tol || dt.matCreated > tol || dt.matUtilised > tol;
+    const matClean = Math.abs(matArtic - dt.matClosing) < tol && !ct.matUtilCapped && !ct.matBlockedByMatYear;
     add('mat', 'MAT credit reconciles',
-      !anyMat ? 'idle' : (Math.abs(matArtic - dt.matClosing) < tol && !ct.matUtilCapped ? 'ok' : 'query'),
+      !anyMat ? 'idle' : (matClean ? 'ok' : 'query'),
       !anyMat ? 'No MAT credit in play'
         : ct.matUtilCapped ? 'Utilisation exceeds the opening entitlement'
-          : `Closing entitlement ${U.fmt(dt.matClosing)}`,
+          : ct.matBlockedByMatYear ? 'MAT applies this year — the requested utilisation was ignored'
+            : `Closing entitlement ${U.fmt(dt.matClosing)}`,
       'movement');
 
     /* 5. Effective rate reconciliation is fully explained */
@@ -522,14 +560,19 @@ const Compute = (() => {
 
     /* 8. Temporary differences in the current tax computation are also in
           the deferred tax schedule. A temp difference in one and not the
-          other is the most common error in this workpaper. */
+          other is the most common error in this workpaper. "Some line is
+          populated" alone can green-tick a workpaper where the schedule is
+          incomplete in amount, not just empty — etr.tempGapMaterial is the
+          authoritative check, so require both. */
     const tempInCt = ct.addsTemp + ct.lessTemp;
     const anyDtData = dt.all.some(r => r.hasData);
+    const crossClean = anyDtData && !etr.tempGapMaterial;
     add('cross', 'Temporary differences carried through',
-      tempInCt < tol ? 'idle' : (anyDtData ? 'ok' : 'query'),
+      tempInCt < tol ? 'idle' : (crossClean ? 'ok' : 'query'),
       tempInCt < tol ? 'No temporary differences flagged'
-        : anyDtData ? 'Deferred tax schedule populated'
-          : 'Current tax has temporary differences but the deferred tax schedule is empty',
+        : crossClean ? 'Deferred tax schedule populated'
+          : !anyDtData ? 'Current tax has temporary differences but the deferred tax schedule is empty'
+            : `Temporary differences of ${U.fmt(Math.abs(etr.tempGap))} in the current tax computation are not fully reflected in the deferred tax schedule`,
       'deferred');
 
     const queries = t.filter(x => x.state === 'query').length;
@@ -567,6 +610,13 @@ const Compute = (() => {
 
     if (dt.unrecognisedDTA > EPS)
       warn(`Deferred tax assets of ${U.fmt(dt.unrecognisedDTA)} are unrecognised. Disclose these under Ind AS 12.81(e).`, 'deferred');
+
+    // A deferred tax LIABILITY has no general non-recognition test — only the
+    // narrow initial recognition exception (12.15(a), 24) permits excluding
+    // one. Flag it so an unchecked "recognised" box can't quietly drop a real
+    // liability from the balance sheet with nothing pointing at it.
+    if (dt.unrecognisedDTL > EPS)
+      warn(`Deferred tax liabilities of ${U.fmt(dt.unrecognisedDTL)} are marked not recognised. This is only valid under the initial recognition exception — confirm it applies, otherwise tick "recognised" for these lines.`, 'deferred');
 
     // A line with a carrying amount and no tax base is usually right (nil tax
     // base) but is worth a second look, since it is also what a blank looks like.

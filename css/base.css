@@ -515,6 +515,8 @@ table.wt tr.row-quiet td { color: var(--ink-400); }
 .toast.err  { border-left-color: #f0666f; }
 .toast.warn { border-left-color: #e0a53a; }
 .toast-tag { font-family: var(--mono); font-size: var(--fs-xs); font-weight: 600; letter-spacing: .06em; opacity: .65; flex: none; }
+.toast-x { background: none; border: none; color: #fff; opacity: .7; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 4px; margin-left: auto; flex: none; }
+.toast-x:hover { opacity: 1; }
 .toast-out { opacity: 0; transform: translateX(14px); transition: all 200ms; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
 

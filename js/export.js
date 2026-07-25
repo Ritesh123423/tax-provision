@@ -487,7 +487,10 @@ const Exporter = (() => {
 
   function toCsv(r) {
     const cell = v => {
-      const s = String(v ?? '');
+      let s = String(v ?? '');
+      // A label starting with =, +, - or @ is read as a formula when the
+      // file is reopened in Excel — neutralise it before the usual quoting.
+      if (/^[=+\-@]/.test(s)) s = "'" + s;
       return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     };
     const rows = [

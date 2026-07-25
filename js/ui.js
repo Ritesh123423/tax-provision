@@ -13,6 +13,11 @@
   const user = Auth.requireAuth();
   if (!user) return;
 
+  // A back-forward cache restore re-shows the fully rendered page without
+  // re-running any script, so a sign-out followed by the Back button can
+  // otherwise display a live, still-interactive session that no longer exists.
+  window.addEventListener('pageshow', e => { if (e.persisted) Auth.requireAuth(); });
+
   let step = 'portfolio';
   let showOpenCols = false;
   let editable = false;
@@ -103,6 +108,12 @@
     if (!STEP_ORDER.includes(next)) next = 'portfolio';
     if (next !== 'portfolio' && !State.isOpen()) next = 'portfolio';
 
+    // Flush any edit still sitting in the 700ms autosave debounce before
+    // leaving the step — Duplicate, Roll forward and the portfolio cards all
+    // read the persisted copy, so a very recent keystroke could otherwise be
+    // silently missing from them. A no-op when nothing is dirty.
+    if (State.isOpen()) State.saveNow();
+
     step = next;
     $$('.step').forEach(s => s.classList.toggle('on', s.id === 'step-' + next));
     $$('.nav-item').forEach(n => {
@@ -134,7 +145,7 @@
   const FIELDS = [
     ['ci-name', 'name', 'str'], ['ci-cin', 'cin', 'str'], ['ci-pan', 'pan', 'str'],
     ['ci-fy', 'fy', 'str'], ['ci-date', 'bsDate', 'str'], ['ci-standard', 'standard', 'str'],
-    ['ci-rate', 'rate', 'num'], ['ci-matrate', 'matRate', 'num'],
+    ['ci-rate', 'rate', 'num'], ['ci-matrate', 'matRate', 'num'], ['ci-priorrate', 'priorRate', 'num'],
     ['ci-applymat', 'applyMat', 'bool'], ['ci-offset', 'offsetPresentation', 'bool'],
     ['ci-prep', 'preparedBy', 'str'], ['ci-rev', 'reviewedBy', 'str'], ['ci-prepdate', 'prepDate', 'str'],
     ['ob-dta', 'opening.dta', 'num'], ['ob-dtl', 'opening.dtl', 'num'], ['ob-mat', 'opening.mat', 'num'],
@@ -506,7 +517,22 @@
      RENDER
      ========================================================== */
 
+  // Sticky warning while the autosave is failing (storage full/blocked) — a
+  // failed write otherwise looks identical to a successful one to the user.
+  let saveFailToast = null;
+  function watchSaveHealth() {
+    if (State.hasSaveFailed()) {
+      if (!saveFailToast) {
+        saveFailToast = U.toast('Your last change could not be saved. Export a backup now — closing this tab may lose it.', 'err', 0);
+      }
+    } else if (saveFailToast) {
+      saveFailToast.remove();
+      saveFailToast = null;
+    }
+  }
+
   function render() {
+    watchSaveHealth();
     const eng = State.get();
     const r = State.getResult();
 
@@ -696,14 +722,19 @@
       setPanel(rail, on);
       return;
     }
-    if (mod && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+    if (mod && e.key.toLowerCase() === 'p') {
+      e.preventDefault();
+      Exporter.printWorkpaper(State.getResult());
+      return;
+    }
+    if (!typing && mod && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
       e.preventDefault();
       const i = STEP_ORDER.indexOf(step);
       const next = STEP_ORDER[U.clamp(i + (e.key === 'ArrowRight' ? 1 : -1), 0, STEP_ORDER.length - 1)];
       go(next);
       return;
     }
-    if (e.altKey && /^[1-8]$/.test(e.key)) {
+    if (!typing && e.altKey && /^[1-8]$/.test(e.key)) {
       e.preventDefault();
       go(STEP_ORDER[Number(e.key)]);
       return;

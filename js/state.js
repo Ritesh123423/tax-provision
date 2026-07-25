@@ -13,11 +13,13 @@ const State = (() => {
   let current = null;   // the open engagement record
   let result = null;    // last Compute.run output
   let dirty = false;
+  let saveFailed = false;
   const subs = new Set();
 
   const get = () => current;
   const getResult = () => result;
   const isOpen = () => !!current;
+  const hasSaveFailed = () => saveFailed;
 
   const onChange = fn => { subs.add(fn); return () => subs.delete(fn); };
   const notify = (reason) => subs.forEach(fn => { try { fn(result, current, reason); } catch (err) { console.error(err); } });
@@ -181,9 +183,11 @@ const State = (() => {
   const scheduleSave = U.debounce(() => saveNow(), 700);
 
   function saveNow() {
-    if (!current || !dirty) return;
-    Store.saveEngagement(current);
-    dirty = false;
+    if (!current || !dirty) return true;
+    const ok = Store.saveEngagement(current);
+    if (ok) { dirty = false; saveFailed = false; }
+    else saveFailed = true;
+    return ok;
   }
 
   /** Recompute without touching storage — used when only display options change. */
@@ -194,12 +198,18 @@ const State = (() => {
     return result;
   }
 
-  // A tab closing mid-edit must not lose the last few keystrokes.
-  window.addEventListener('beforeunload', () => { scheduleSave.cancel?.(); saveNow(); });
+  // A tab closing mid-edit must not lose the last few keystrokes. If the
+  // write itself failed (storage full/blocked), warn the browser so it asks
+  // the user to confirm leaving rather than closing on an unsaved edit.
+  window.addEventListener('beforeunload', e => {
+    scheduleSave.cancel?.();
+    saveNow();
+    if (saveFailed) { e.preventDefault(); e.returnValue = ''; }
+  });
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
 
   return {
-    get, getResult, isOpen, onChange,
+    get, getResult, isOpen, onChange, hasSaveFailed,
     open, close, create, restore,
     readPath, writePath,
     addCtRow, delCtRow, addDtRow, delDtRow,

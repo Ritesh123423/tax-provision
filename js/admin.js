@@ -14,6 +14,9 @@
   const me = Auth.requireAuth({ perm: 'user.manage' });
   if (!me) return;
 
+  // See js/ui.js for why: a bfcache restore after sign-out must re-check.
+  window.addEventListener('pageshow', e => { if (e.persisted) Auth.requireAuth({ perm: 'user.manage' }); });
+
   const ROLES = Store.ROLES;
   let pane = 'overview';
 
@@ -533,7 +536,14 @@
   byId('btn-log-export').addEventListener('click', () => {
     const rows = [['Timestamp', 'Person', 'Action', 'Detail']];
     Store.getLog().forEach(l => rows.push([l.ts, l.userName, l.action, l.detail || '']));
-    const csv = rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v).join(',')).join('\r\n');
+    // A label starting with =, +, - or @ is read as a formula when the file
+    // is reopened in Excel — neutralise it before the usual quoting.
+    const cell = v => {
+      let s = String(v ?? '');
+      if (/^[=+\-@]/.test(s)) s = "'" + s;
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const csv = rows.map(r => r.map(cell).join(',')).join('\r\n');
     U.download(`ActivityLog_${U.todayISO()}.csv`, '\ufeff' + csv, 'text/csv;charset=utf-8');
     U.toast('Log downloaded', 'ok');
   });
@@ -689,7 +699,8 @@
           confirmLabel: 'Delete account', danger: true
         });
         if (!ok) break;
-        Store.deleteUser(id);
+        const delRes = Store.deleteUser(id);
+        if (!delRes.ok) { U.toast(delRes.error, 'err', 5000); break; }
         Store.log('Deleted account', u.email);
         renderUsers();
         U.toast('Account deleted', 'ok');
@@ -779,7 +790,8 @@
           confirmLabel: 'Delete regime', danger: true
         });
         if (!ok) break;
-        Store.deleteRate(id);
+        const rateRes = Store.deleteRate(id);
+        if (!rateRes.ok) { U.toast(rateRes.error, 'err', 5000); break; }
         Store.log('Deleted tax regime', r.code);
         renderRates();
         U.toast('Regime deleted', 'ok');
@@ -809,7 +821,8 @@
           confirmLabel: 'Delete point', danger: true
         });
         if (!ok) break;
-        Store.deleteChecklistItem(id);
+        const chkRes = Store.deleteChecklistItem(id);
+        if (!chkRes.ok) { U.toast(chkRes.error, 'err', 5000); break; }
         Store.log('Deleted a checklist point', item.text.slice(0, 60));
         renderChecklist();
         U.toast('Point deleted', 'ok');

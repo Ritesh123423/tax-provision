@@ -43,11 +43,6 @@ const U = (() => {
       .replace(/'/g, '&#39;');
   }
 
-  /** Escape for use inside a single-quoted JS string in an inline handler. */
-  function escJs(s) {
-    return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n');
-  }
-
   /* ---------------- Numbers ---------------- */
 
   /** Coerce anything to a finite number. Blank, null and NaN all become 0. */
@@ -216,16 +211,27 @@ const U = (() => {
 
   const TOAST_TAG = { ok: 'DONE', err: 'ERROR', warn: 'CHECK', info: 'NOTE' };
 
+  /** ms = 0 makes a sticky toast (a closable "×" instead of auto-dismiss) —
+   *  for a condition that stays true until the user does something about it,
+   *  such as a save that failed and hasn't yet succeeded. */
   function toast(msg, type = 'info', ms = 3200) {
     const wrap = toastWrap();
     const el = document.createElement('div');
     el.className = 'toast ' + type;
-    el.innerHTML = `<span class="toast-tag">${TOAST_TAG[type] || 'NOTE'}</span><span>${esc(msg)}</span>`;
+    el.innerHTML = `<span class="toast-tag">${TOAST_TAG[type] || 'NOTE'}</span><span>${esc(msg)}</span>` +
+      (ms === 0 ? `<button type="button" class="toast-x" aria-label="Dismiss">&times;</button>` : '');
     wrap.appendChild(el);
-    setTimeout(() => {
-      el.classList.add('toast-out');
-      setTimeout(() => el.remove(), 220);
-    }, ms);
+    if (ms === 0) {
+      el.querySelector('.toast-x').addEventListener('click', () => {
+        el.classList.add('toast-out');
+        setTimeout(() => el.remove(), 220);
+      });
+    } else {
+      setTimeout(() => {
+        el.classList.add('toast-out');
+        setTimeout(() => el.remove(), 220);
+      }, ms);
+    }
     return el;
   }
 
@@ -322,7 +328,7 @@ const U = (() => {
   }
 
   return {
-    $, $$, byId, setText, setHTML, val, num, show, esc, escJs,
+    $, $$, byId, setText, setHTML, val, num, show, esc,
     toNum, round, fmt, fmtBr, fmtSigned, fmtPct, fmtRs,
     fmtDate, fmtDateLong, fmtDateTime, relTime, fyFor, todayISO,
     uid, debounce, clamp, deepClone, matches, download, copyText,

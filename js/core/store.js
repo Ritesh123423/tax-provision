@@ -107,8 +107,13 @@ const Store = (() => {
     db.users = Array.isArray(db.users) ? db.users : [];
     db.engagements = Array.isArray(db.engagements) ? db.engagements : [];
     db.log = Array.isArray(db.log) ? db.log : [];
-    if (!Array.isArray(db.rates) || !db.rates.length) db.rates = U.deepClone(SEED_RATES);
-    if (!Array.isArray(db.checklistTemplate) || !db.checklistTemplate.length) db.checklistTemplate = U.deepClone(SEED_CHECKLIST);
+    // Reseed only when the key is genuinely absent (an old/corrupt payload),
+    // not merely empty — an admin who deliberately deletes every rate or
+    // checklist point (now blocked at the delete call sites, but still
+    // possible via a hand-edited import) should not have that silently
+    // undone on the next load with no log entry explaining why.
+    if (!Array.isArray(db.rates)) db.rates = U.deepClone(SEED_RATES);
+    if (!Array.isArray(db.checklistTemplate)) db.checklistTemplate = U.deepClone(SEED_CHECKLIST);
     db.schema = SCHEMA;
     return db;
   }
@@ -200,14 +205,24 @@ const Store = (() => {
   }
 
   function deleteUser(id) {
-    return commit(db => {
-      db.users = db.users.filter(u => u.id !== id);
+    // The suspend and role-change paths already refuse to touch the last
+    // active administrator; the delete path must too, and — unlike those
+    // two, which are only guarded in admin.js at render time — this guard
+    // lives in the store itself so no call site (present or future) can
+    // route around it via a stale render.
+    const u = userById(id);
+    if (u && u.role === 'admin' && u.status === 'active' && adminCount() <= 1) {
+      return { ok: false, error: 'This is the only active administrator. Promote someone else first.' };
+    }
+    commit(db => {
+      db.users = db.users.filter(x => x.id !== id);
       // Engagements outlive their author; ownership falls back to unassigned.
       db.engagements.forEach(e => {
         if (e.ownerId === id) e.ownerId = null;
         if (e.assignedTo === id) e.assignedTo = null;
       });
     });
+    return { ok: true };
   }
 
   const adminCount = () => users().filter(u => u.role === 'admin' && u.status === 'active').length;
@@ -228,6 +243,7 @@ const Store = (() => {
       bsDate: `${yr + 1}-03-31`,
       rateId: rate.id,
       rate: rate.rate,
+      priorRate: rate.rate,
       matRate: rate.matRate,
       applyMat: rate.matRate > 0,
       standard: 'indas12',
@@ -328,13 +344,19 @@ const Store = (() => {
     return commit(db => { db.engagements.push(eng); return eng; });
   }
 
+  /**
+   * Unlike the generic commit(), this returns whether the write actually
+   * reached storage — State.saveNow() needs that to tell a real save from
+   * a quota failure that silently looks identical to one.
+   */
   function saveEngagement(eng) {
-    return commit(db => {
-      const i = db.engagements.findIndex(e => e.id === eng.id);
-      eng.updatedAt = new Date().toISOString();
-      if (i >= 0) db.engagements[i] = eng; else db.engagements.push(eng);
-      return eng;
-    });
+    const db = load();
+    const i = db.engagements.findIndex(e => e.id === eng.id);
+    eng.updatedAt = new Date().toISOString();
+    if (i >= 0) db.engagements[i] = eng; else db.engagements.push(eng);
+    const ok = persist();
+    listeners.forEach(l => { try { l(db); } catch {} });
+    return ok;
   }
 
   function deleteEngagement(id) {
@@ -363,6 +385,9 @@ const Store = (() => {
     const src = engagementById(id);
     if (!src) return null;
     const next = U.deepClone(src);
+    // The rate this year's opening balances were struck at, so the ETR
+    // reconciliation can isolate a rate change from a missing schedule entry.
+    next.priorRate = src.rate;
     const yr = parseInt(String(src.fy).slice(0, 4), 10);
     next.id = U.uid('eng');
     next.fy = Number.isFinite(yr) ? `${yr + 1}-${String(yr + 2).slice(-2)}` : U.fyFor();
@@ -402,7 +427,13 @@ const Store = (() => {
       return rate;
     });
   }
-  const deleteRate = id => commit(db => { db.rates = db.rates.filter(r => r.id !== id); });
+  function deleteRate(id) {
+    // Deleting the last remaining regime would leave newEngagement() with
+    // nothing to fall back on (it reads rates()[0] when there's no default).
+    if (rates().length <= 1) return { ok: false, error: 'At least one tax regime must remain.' };
+    commit(db => { db.rates = db.rates.filter(r => r.id !== id); });
+    return { ok: true };
+  }
 
   const checklistTemplate = () => load().checklistTemplate;
   function saveChecklistItem(item) {
@@ -412,7 +443,11 @@ const Store = (() => {
       return item;
     });
   }
-  const deleteChecklistItem = id => commit(db => { db.checklistTemplate = db.checklistTemplate.filter(c => c.id !== id); });
+  function deleteChecklistItem(id) {
+    if (checklistTemplate().length <= 1) return { ok: false, error: 'At least one checklist point must remain.' };
+    commit(db => { db.checklistTemplate = db.checklistTemplate.filter(c => c.id !== id); });
+    return { ok: true };
+  }
   const resetChecklistTemplate = () => commit(db => { db.checklistTemplate = U.deepClone(SEED_CHECKLIST); });
 
   /* ---------------- Firm settings ---------------- */
