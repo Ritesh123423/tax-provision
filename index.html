@@ -128,8 +128,28 @@
           </div>
 
           <div class="field">
-            <label class="lbl" for="rg-desig">Designation <span class="opt">optional</span></label>
-            <input class="inp" id="rg-desig" autocomplete="organization-title" placeholder="Audit Manager" style="text-align:left">
+            <label class="lbl">Your role <span class="req">*</span></label>
+            <div class="role-cards" id="rg-role-cards">
+              <div class="role-card-opt">
+                <input type="radio" name="rg-role" id="rg-role-partner" value="partner">
+                <label class="role-card-label" for="rg-role-partner">
+                  <div><div class="role-card-name">Partner</div><div class="role-card-desc">Full access. Signs off workpapers and manages the team.</div></div>
+                </label>
+              </div>
+              <div class="role-card-opt">
+                <input type="radio" name="rg-role" id="rg-role-manager" value="manager">
+                <label class="role-card-label" for="rg-role-manager">
+                  <div><div class="role-card-name">Manager</div><div class="role-card-desc">Create, edit and review all engagements. Cannot change firm settings.</div></div>
+                </label>
+              </div>
+              <div class="role-card-opt">
+                <input type="radio" name="rg-role" id="rg-role-article" value="article">
+                <label class="role-card-label" for="rg-role-article">
+                  <div><div class="role-card-name">Article</div><div class="role-card-desc">Create and edit engagements assigned to them.</div></div>
+                </label>
+              </div>
+            </div>
+            <p class="err-txt hide" id="rg-role-err">Select your role to continue.</p>
           </div>
 
           <div class="field">

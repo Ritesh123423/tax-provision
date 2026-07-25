@@ -166,7 +166,14 @@
     if (bad) return;
 
     busy('rg-submit', true, 'Creating…');
-    const res = await Auth.register({ name, email, designation: desig, password: pw });
+    const roleEl = document.querySelector('input[name="rg-role"]:checked');
+    if (!roleEl && !isFirst) {
+      document.getElementById('rg-role-err')?.classList.remove('hide');
+      busy('rg-submit', false);
+      return;
+    }
+    const chosenRole = roleEl ? roleEl.value : null;
+    const res = await Auth.register({ name, email, designation: chosenRole ? '' : '', password: pw, role: chosenRole });
 
     if (!res.ok) {
       busy('rg-submit', false);

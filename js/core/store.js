@@ -169,7 +169,10 @@ const Store = (() => {
   /* ---------------- Users ---------------- */
 
   const ROLES = {
-    admin:    { label: 'Administrator', rank: 4, blurb: 'Full control: users, rate master, checklist, every engagement.' },
+    partner: { label: 'Partner',  rank: 0, blurb: 'Full access. Signs off workpapers. Manages team and settings.' },
+    manager: { label: 'Manager',  rank: 1, blurb: 'Create, edit and review all engagements. Cannot change firm settings.' },
+    article: { label: 'Article',  rank: 2, blurb: 'Create and edit their own assigned engagements.' },
+  },
     manager:  { label: 'Manager',       rank: 3, blurb: 'Prepare and review any engagement, and sign off.' },
     preparer: { label: 'Preparer',      rank: 2, blurb: 'Create and edit engagements assigned to them.' },
     viewer:   { label: 'Read only',     rank: 1, blurb: 'View and export. No edits.' }

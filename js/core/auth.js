@@ -18,11 +18,11 @@
 
 const Auth = (() => {
 
+  // Audit firm roles: partner (top), manager, article (trainee)
   const PERMS = {
-    admin:    ['engagement.create','engagement.editAny','engagement.deleteAny','engagement.signoff','engagement.lock','engagement.export','user.manage','rate.manage','checklist.manage','log.view','firm.manage','data.manage'],
-    manager:  ['engagement.create','engagement.editAny','engagement.deleteOwn','engagement.signoff','engagement.export','log.view'],
-    preparer: ['engagement.create','engagement.editOwn','engagement.deleteOwn','engagement.export'],
-    viewer:   ['engagement.export']
+    partner: ['engagement.create','engagement.editAny','engagement.deleteAny','engagement.signoff','engagement.lock','engagement.export','user.manage','rate.manage','checklist.manage','log.view','firm.manage','data.manage'],
+    manager: ['engagement.create','engagement.editAny','engagement.deleteOwn','engagement.signoff','engagement.export','log.view'],
+    article: ['engagement.create','engagement.editOwn','engagement.deleteOwn','engagement.export'],
   };
 
   /* ---------------- Session ---------------- */
@@ -94,7 +94,7 @@ const Auth = (() => {
     const pw = await Hash.derive(password);
     const user = Store.addUser({
       name, email, designation,
-      role: role || (isFirst ? 'admin' : 'preparer'),
+      role: role || (isFirst ? 'partner' : 'article'),
       algo: pw.algo, salt: pw.salt, iter: pw.iter, hash: pw.hash
     });
 
@@ -198,7 +198,7 @@ const Auth = (() => {
   /** Can this user edit this engagement right now? */
   function canEdit(eng, user = currentUser()) {
     if (!user || !eng) return false;
-    if (eng.locked && user.role !== 'admin') return false;
+    if (eng.locked && user.role !== 'partner') return false;
     if (eng.status === 'signed' && !can('engagement.signoff', user)) return false;
     if (can('engagement.editAny', user)) return true;
     if (can('engagement.editOwn', user)) return eng.ownerId === user.id || eng.assignedTo === user.id;
@@ -216,7 +216,7 @@ const Auth = (() => {
   function visibleEngagements(user = currentUser()) {
     const all = Store.engagements();
     if (!user) return [];
-    if (['admin', 'manager', 'viewer'].includes(user.role)) return all;
+    if (['partner', 'manager'].includes(user.role)) return all;
     return all.filter(e => e.ownerId === user.id || e.assignedTo === user.id);
   }
 

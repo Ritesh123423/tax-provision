@@ -674,6 +674,7 @@ const Render = (() => {
   function signoff(r, user) {
     const { eng } = r;
     const canSign = Auth.can('engagement.signoff', user);
+    const isPartner = user?.role === 'partner';
     const blockers = [];
     if (r.validation.errors.length) blockers.push(`${r.validation.errors.length} validation error${r.validation.errors.length === 1 ? '' : 's'}`);
     if (r.tallies.queries) blockers.push(`${r.tallies.queries} tally quer${r.tallies.queries === 1 ? 'y' : 'ies'}`);
@@ -681,9 +682,9 @@ const Render = (() => {
     const openPoints = tpl.filter(i => { const s = eng.checklist?.[i.id]?.state; return s !== 'done' && s !== 'na'; }).length;
     if (openPoints) blockers.push(`${openPoints} checklist point${openPoints === 1 ? '' : 's'} unmarked`);
 
-    return `<div class="card">
+    return `<div class="card signoff-card">
       <div class="card-hdr">
-        <div class="card-title">Status<span class="card-sub">Signing off locks the figures against further edits</span></div>
+        <div class="card-title">Partner sign-off <span class="card-sub">${canSign ? 'You can sign off this workpaper' : 'Only a Partner can approve this workpaper'}</span></div>
         <span class="badge ${eng.status === 'signed' ? 'badge-dta' : eng.status === 'review' ? 'badge-flag' : 'badge-neutral'}">
           ${eng.status === 'signed' ? 'Signed off' : eng.status === 'review' ? 'Under review' : 'Draft'}</span>
       </div>

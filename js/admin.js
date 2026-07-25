@@ -142,7 +142,7 @@
     byId('u-body').innerHTML = list.length ? list.map(u => {
       const isMe = u.id === me.id;
       const locked = u.lockedUntil && new Date(u.lockedUntil) > new Date();
-      const protectedAdmin = lastAdmin && u.role === 'admin' && u.status === 'active';
+      const protectedAdmin = lastAdmin && u.role === 'partner' && u.status === 'active';
       return `<tr>
         <td>
           <div class="u-cell">
@@ -211,7 +211,7 @@
         <div class="field">
           <label class="lbl" for="ud-role">Role</label>
           <select class="inp" id="ud-role">
-            ${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${(existing?.role || 'preparer') === k ? 'selected' : ''}>${esc(v.label)}</option>`).join('')}
+            ${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${(existing?.role || 'article') === k ? 'selected' : ''}>${esc(v.label)}</option>`).join('')}
           </select>
           <p class="hint" id="ud-role-note"></p>
         </div>
@@ -266,7 +266,7 @@
             });
           } else {
             // Never let the console remove the last route back in.
-            if (existing.role === 'admin' && role !== 'admin' && Store.adminCount() <= 1)
+            if (existing.role === 'partner' && role !== 'partner' && Store.adminCount() <= 1)
               return fail('This is the only active administrator. Promote someone else first.');
             Store.updateUser(existing.id, { name, email, designation: desig, role });
             Store.log('Updated account', `${name} <${email}>`);
@@ -671,7 +671,7 @@
       case 'toggle-user': {
         const u = Store.userById(id);
         const next = u.status === 'active' ? 'suspended' : 'active';
-        if (next === 'suspended' && u.role === 'admin' && Store.adminCount() <= 1) {
+        if (next === 'suspended' && u.role === 'partner' && Store.adminCount() <= 1) {
           U.toast('This is the only active administrator. Promote someone else first.', 'err', 5000);
           return;
         }
@@ -835,7 +835,7 @@
     const el = e.target;
     if (el.dataset.act === 'role') {
       const u = Store.userById(el.dataset.id);
-      if (u.role === 'admin' && el.value !== 'admin' && Store.adminCount() <= 1) {
+      if (u.role === 'partner' && el.value !== 'partner' && Store.adminCount() <= 1) {
         U.toast('This is the only active administrator. Promote someone else first.', 'err', 5000);
         renderUsers();
         return;

@@ -70,7 +70,7 @@
 
   /* ---------------- Mobile panels ---------------- */
 
-  const side = byId('side'), rail = byId('rail');
+  // No sidebar or rail — tab-based navigation
   let scrim = null;
 
   function setPanel(el, on) {
@@ -79,9 +79,9 @@
     if (anyOpen && !scrim) {
       scrim = document.createElement('div');
       scrim.className = 'scrim';
-      scrim.addEventListener('click', () => { setPanel(side, false); setPanel(rail, false); });
+      scrim.addEventListener('click', () => { // no side panel // no rail });
       document.body.appendChild(scrim);
-    } else if (!anyOpen && scrim) { scrim.remove(); scrim = null; }
+    }
   }
 
   byId('btn-side').addEventListener('click', e => {
@@ -90,19 +90,13 @@
     setPanel(side, on);
     byId('btn-side').setAttribute('aria-expanded', String(on));
   });
-  byId('btn-rail').addEventListener('click', e => {
-    e.stopPropagation();
-    const on = !rail.classList.contains('open');
-    setPanel(rail, on);
-    byId('btn-rail').setAttribute('aria-expanded', String(on));
-  });
-  byId('btn-rail-close').addEventListener('click', () => setPanel(rail, false));
+  // rail replaced by tallies tab
 
   /* ==========================================================
      NAVIGATION
      ========================================================== */
 
-  const STEP_ORDER = ['portfolio', 'client', 'current', 'deferred', 'movement', 'summary', 'etr', 'disclosure', 'checklist'];
+  const STEP_ORDER = ['portfolio', 'client', 'current', 'deferred', 'movement', 'summary', 'etr', 'tallies', 'checklist'];
 
   function go(next, field) {
     if (!STEP_ORDER.includes(next)) next = 'portfolio';
@@ -116,15 +110,14 @@
 
     step = next;
     $$('.step').forEach(s => s.classList.toggle('on', s.id === 'step-' + next));
-    $$('.nav-item').forEach(n => {
+    $$('.tab-item').forEach(n => {
       const on = n.dataset.step === next;
-      n.setAttribute('aria-current', on ? 'page' : 'false');
-      if (!on) n.removeAttribute('aria-current');
+      if (on) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current');
     });
 
     if (location.hash !== '#' + next) history.replaceState(null, '', '#' + next);
     byId('main').scrollTop = 0;
-    setPanel(side, false);
+    // no side panel
 
     render();
 
@@ -281,7 +274,7 @@
 
       case 'goto':
         go(el.dataset.step, el.dataset.field || null);
-        setPanel(rail, false);
+        // no rail
         break;
 
       case 'new-eng':
@@ -396,6 +389,20 @@
   /* ---------------- Engagement list controls ---------------- */
 
   byId('btn-new-eng').addEventListener('click', () => newEngagement());
+
+  // Disclosure note toggle (collapsed in checklist step)
+  byId('disc-toggle')?.addEventListener('click', () => {
+    const panel = byId('disc-panel');
+    const btn = byId('disc-toggle');
+    if (!panel) return;
+    const hidden = panel.classList.contains('hide');
+    panel.classList.toggle('hide', !hidden);
+    btn.textContent = hidden ? 'Hide note' : 'Show note';
+    if (hidden) {
+      const r = State.getResult();
+      if (r) byId('disclosure-body').innerHTML = Render.disclosure(r);
+    }
+  });
 
   byId('btn-manage-team').addEventListener('click', () => {
     const eng = State.get();
@@ -571,11 +578,9 @@
       byId('hdr-status').className = 'hdr-status draft';
       byId('hdr-status').textContent = '—';
       byId('rail-body').innerHTML = '<p class="txt-mute" style="padding:10px;font-size:var(--fs-sm)">Open an engagement to see its tallies.</p>';
-      byId('rail-count').textContent = '';
-      byId('prog-pct').textContent = '0%';
-      byId('prog-fill').style.width = '0%';
-      byId('prog-next').textContent = 'Open an engagement to begin.';
-      $$('[data-flag]').forEach(f => { f.innerHTML = ''; });
+      const tc2 = byId('tally-count');
+      if (tc2) tc2.style.display = 'none';
+      $$('[data-flag]').forEach(f => { f.innerHTML = ''; f.classList.add('hide'); });
       if (step === 'portfolio') renderPortfolio();
       return;
     }
@@ -590,22 +595,23 @@
     st.textContent = eng.locked ? 'Locked' : eng.status === 'signed' ? 'Signed' : eng.status === 'review' ? 'Review' : 'Draft';
 
     /* Progress */
-    byId('prog-pct').textContent = r.progress.pct + '%';
-    byId('prog-fill').style.width = r.progress.pct + '%';
-    byId('prog-fill').parentElement.setAttribute('aria-valuenow', String(r.progress.pct));
-    const nextStep = r.progress.steps.find(s => !s.done);
-    byId('prog-next').textContent = nextStep ? `Next: ${nextStep.label}` : 'Every step complete.';
+    // progress shown in header meta
 
     /* Sidebar flags */
     const flagged = new Set(r.tallies.items.filter(t => t.state === 'query').map(t => t.section));
     r.validation.errors.forEach(v => flagged.add(v.section));
     $$('[data-flag]').forEach(f => {
-      f.innerHTML = flagged.has(f.dataset.flag) ? '<span class="nav-flag" title="Needs attention">!</span>' : '';
+      if (flagged.has(f.dataset.flag)) { f.classList.remove('hide'); }
+      else { f.classList.add('hide'); }
     });
 
     /* Rail */
-    byId('rail-body').innerHTML = Render.rail(r);
-    byId('rail-count').textContent = r.tallies.queries ? `(${r.tallies.queries})` : '';
+    if (byId('rail-body')) byId('rail-body').innerHTML = Render.rail(r);
+    const tc = byId('tally-count');
+    if (tc) {
+      if (r.tallies.queries) { tc.textContent = r.tallies.queries; tc.style.display = ''; }
+      else tc.style.display = 'none';
+    }
 
     /* Read-only banner */
     applyReadOnly(eng);
@@ -623,11 +629,20 @@
         byId('je-body').innerHTML = Render.journals(r.jes);
         break;
       case 'etr': byId('etr-body').innerHTML = Render.etr(r); break;
-      case 'disclosure': byId('disclosure-body').innerHTML = Render.disclosure(r); break;
+      case 'disclosure': {
+        // disclosure is embedded in checklist step
+        const discBody = byId('disclosure-body');
+        if (discBody) discBody.innerHTML = Render.disclosure(r);
+        break;
+      }
       case 'checklist':
         byId('checklist-summary').innerHTML = Render.checklistSummary(eng);
         byId('checklist-body').innerHTML = Render.checklist(eng, editable, user);
         byId('signoff-body').innerHTML = Render.signoff(r, user);
+        // Refresh disclosure if panel is open
+        if (byId('disc-panel') && !byId('disc-panel').classList.contains('hide')) {
+          byId('disclosure-body').innerHTML = Render.disclosure(r);
+        }
         break;
     }
   }
@@ -754,12 +769,7 @@
       U.toast('Saved', 'ok', 1600);
       return;
     }
-    if (mod && e.key.toLowerCase() === 'j') {
-      e.preventDefault();
-      const on = !rail.classList.contains('open');
-      setPanel(rail, on);
-      return;
-    }
+    if (mod && e.key.toLowerCase() === 'j') { e.preventDefault(); go('tallies'); return; }
     if (mod && e.key.toLowerCase() === 'p') {
       e.preventDefault();
       Exporter.printWorkpaper(State.getResult());
